@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: smartsite-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smartsite}
+      POSTGRES_USER: ${POSTGRES_USER:-smartsite}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartsite}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - smartsite-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smartsite} -d ${POSTGRES_DB:-smartsite}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  smartsite-postgres-data:
