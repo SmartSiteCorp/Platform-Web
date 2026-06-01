@@ -177,6 +177,37 @@ Generer le client API frontend :
 npm run generate:api-client
 ```
 
+## Conventions Git
+
+Les branches de feature suivent un nom explicite :
+
+```text
+feature/authentication
+feature/drone-mission
+fix/register-validation
+chore/ci
+```
+
+Les messages de commit suivent le format Conventional Commits :
+
+```text
+type(scope): message court
+```
+
+Exemples :
+
+```text
+feat(auth): add organization registration
+fix(web): remove deprecated TypeScript baseUrl
+chore(ci): add GitHub Actions workflow
+```
+
+Types autorises :
+
+```text
+feat, fix, docs, style, refactor, test, chore, ci, build, perf
+```
+
 ## URLs Locales
 
 ```text

@@ -1,18 +1,8 @@
 const defaultApiPort = 4000;
-const defaultLocalDatabaseUrl = "postgres://smartsite:smartsite@127.0.0.1:5433/smartsite";
+const defaultJwtAccessExpiresInSeconds = 3600;
 
 export function getDatabaseUrl(): string {
-  const databaseUrl = process.env.DATABASE_URL;
-
-  if (databaseUrl) {
-    return databaseUrl;
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    return getRequiredEnv("DATABASE_URL");
-  }
-
-  return defaultLocalDatabaseUrl;
+  return getRequiredEnv("DATABASE_URL");
 }
 
 export function getAppOrigin(): string {
@@ -33,6 +23,26 @@ export function getApiPort(): number {
   }
 
   return port;
+}
+
+export function getJwtAccessSecret(): string {
+  return getRequiredEnv("JWT_ACCESS_SECRET");
+}
+
+export function getJwtAccessExpiresInSeconds(): number {
+  const rawValue = process.env.JWT_ACCESS_EXPIRES_IN_SECONDS;
+
+  if (!rawValue) {
+    return defaultJwtAccessExpiresInSeconds;
+  }
+
+  const expiresInSeconds = Number.parseInt(rawValue, 10);
+
+  if (!Number.isInteger(expiresInSeconds) || expiresInSeconds <= 0) {
+    throw new Error("JWT_ACCESS_EXPIRES_IN_SECONDS must be a positive integer.");
+  }
+
+  return expiresInSeconds;
 }
 
 function getRequiredEnv(name: string): string {
