@@ -1,11 +1,13 @@
-import { Body, Controller, Inject, Post } from "@nestjs/common";
+import { Body, Controller, Inject, Post, UseGuards } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiTags,
+  ApiTooManyRequestsResponse,
 } from "@nestjs/swagger";
+import { ThrottlerGuard } from "@nestjs/throttler";
 
 import { ApiErrorResponseDto } from "../shared/http/api-error-response.dto.js";
 import { RegisterRequestDto, RegisterResponseDto } from "./auth.dto.js";
@@ -24,6 +26,11 @@ export class AuthController {
     type: ApiErrorResponseDto,
   })
   @ApiConflictResponse({ description: "Email déjà utilisé.", type: ApiErrorResponseDto })
+  @ApiTooManyRequestsResponse({
+    description: "Trop de tentatives d'inscription.",
+    type: ApiErrorResponseDto,
+  })
+  @UseGuards(ThrottlerGuard)
   public register(@Body() request: RegisterRequestDto): Promise<RegisterResponseDto> {
     return this.authService.register(request);
   }
