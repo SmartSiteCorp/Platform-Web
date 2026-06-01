@@ -26,7 +26,7 @@ const registeredAccount: RegisterResponseDto = {
   },
 };
 
-describe("RegisterForm", () => {
+describe("RegisterForm fields", () => {
   it("renders the registration fields", () => {
     renderRegisterForm(createSuccessfulSubmitter());
 
@@ -68,6 +68,34 @@ describe("RegisterForm", () => {
     expect(submitCount).toBe(0);
   });
 
+  it("toggles password fields visibility", () => {
+    renderRegisterForm(createSuccessfulSubmitter());
+
+    const passwordInput = screen.getByLabelText("Mot de passe");
+    const passwordConfirmationInput = screen.getByLabelText("Confirmation mot de passe");
+
+    expect(passwordInput).toHaveAttribute("type", "password");
+    expect(passwordConfirmationInput).toHaveAttribute("type", "password");
+
+    fireEvent.click(screen.getByRole("button", { name: "Afficher le mot de passe" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Afficher la confirmation du mot de passe" }),
+    );
+
+    expect(passwordInput).toHaveAttribute("type", "text");
+    expect(passwordConfirmationInput).toHaveAttribute("type", "text");
+
+    fireEvent.click(screen.getByRole("button", { name: "Masquer le mot de passe" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Masquer la confirmation du mot de passe" }),
+    );
+
+    expect(passwordInput).toHaveAttribute("type", "password");
+    expect(passwordConfirmationInput).toHaveAttribute("type", "password");
+  });
+});
+
+describe("RegisterForm submission", () => {
   it("submits a normalized payload and completes registration", async () => {
     let submittedRequest: RegisterRequestDto | null = null;
     const submitRegistration: RegisterSubmitter = (request) => {

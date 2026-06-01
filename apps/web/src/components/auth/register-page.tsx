@@ -32,7 +32,6 @@ export function RegisterPage() {
             onRegistrationCompleted={completeRegistration}
             submitRegistration={registerAccount}
           />
-          <AccentBars />
         </div>
       </section>
     </main>
@@ -55,7 +54,6 @@ function RegisterBrandPanel() {
           Créez votre espace entreprise et centralisez vos équipes, chantiers et preuves terrain.
         </p>
         <RegisterIntroSteps />
-        <AccentBars className="mt-12" />
       </div>
     </section>
   );
@@ -128,15 +126,5 @@ function SubtleGrid() {
         backgroundSize: "40px 40px",
       }}
     />
-  );
-}
-
-function AccentBars({ className = "" }: { readonly className?: string }) {
-  return (
-    <div className={`flex justify-center gap-2 ${className}`}>
-      <div className="h-1 w-12 rounded-full bg-primary" />
-      <div className="h-1 w-6 rounded-full bg-success" />
-      <div className="h-1 w-3 rounded-full bg-accent" />
-    </div>
   );
 }

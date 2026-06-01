@@ -1,7 +1,17 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Building2, Loader2, Lock, Mail, User, UserPlus } from "lucide-react";
+import {
+  AlertCircle,
+  Building2,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Mail,
+  User,
+  UserPlus,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { HTMLInputTypeAttribute } from "react";
 import { useState } from "react";
@@ -62,9 +72,6 @@ export function RegisterForm({ onRegistrationCompleted, submitRegistration }: Re
     <Card className="w-full border-2 border-border shadow-xl">
       <CardHeader>
         <CardTitle className="text-xl">Créer une organisation</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Le premier compte devient administrateur de l'entreprise.
-        </p>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" noValidate onSubmit={(event) => void submitForm(event)}>
@@ -121,6 +128,9 @@ function RegisterIdentityFields({ errors, register }: RegisterFieldsProps) {
 }
 
 function RegisterCredentialFields({ errors, register }: RegisterFieldsProps) {
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isPasswordConfirmationVisible, setIsPasswordConfirmationVisible] = useState(false);
+
   return (
     <>
       <FormTextField
@@ -139,7 +149,15 @@ function RegisterCredentialFields({ errors, register }: RegisterFieldsProps) {
         id="password"
         label="Mot de passe"
         registration={register("password")}
-        type="password"
+        trailingAction={{
+          ariaLabel: isPasswordVisible ? "Masquer le mot de passe" : "Afficher le mot de passe",
+          icon: isPasswordVisible ? EyeOff : Eye,
+          onClick: () => {
+            setIsPasswordVisible((currentValue) => !currentValue);
+          },
+          pressed: isPasswordVisible,
+        }}
+        type={isPasswordVisible ? "text" : "password"}
       />
       <FormTextField
         autoComplete="new-password"
@@ -148,7 +166,17 @@ function RegisterCredentialFields({ errors, register }: RegisterFieldsProps) {
         id="passwordConfirmation"
         label="Confirmation mot de passe"
         registration={register("passwordConfirmation")}
-        type="password"
+        trailingAction={{
+          ariaLabel: isPasswordConfirmationVisible
+            ? "Masquer la confirmation du mot de passe"
+            : "Afficher la confirmation du mot de passe",
+          icon: isPasswordConfirmationVisible ? EyeOff : Eye,
+          onClick: () => {
+            setIsPasswordConfirmationVisible((currentValue) => !currentValue);
+          },
+          pressed: isPasswordConfirmationVisible,
+        }}
+        type={isPasswordConfirmationVisible ? "text" : "password"}
       />
     </>
   );
@@ -174,7 +202,15 @@ interface FormTextFieldProps {
   readonly id: string;
   readonly label: string;
   readonly registration: UseFormRegisterReturn;
+  readonly trailingAction?: FieldTrailingAction;
   readonly type: HTMLInputTypeAttribute;
+}
+
+interface FieldTrailingAction {
+  readonly ariaLabel: string;
+  readonly icon: LucideIcon;
+  readonly onClick: () => void;
+  readonly pressed: boolean;
 }
 
 function FormTextField({
@@ -184,9 +220,11 @@ function FormTextField({
   id,
   label,
   registration,
+  trailingAction,
   type,
 }: FormTextFieldProps) {
   const errorId = `${id}-error`;
+  const TrailingIcon = trailingAction?.icon;
 
   return (
     <div className="space-y-2">
@@ -200,11 +238,22 @@ function FormTextField({
           aria-describedby={error ? errorId : undefined}
           aria-invalid={Boolean(error)}
           autoComplete={autoComplete}
-          className="pl-10"
+          className={trailingAction ? "pl-10 pr-10" : "pl-10"}
           id={id}
           type={type}
           {...registration}
         />
+        {trailingAction && TrailingIcon ? (
+          <button
+            aria-label={trailingAction.ariaLabel}
+            aria-pressed={trailingAction.pressed}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/25"
+            onClick={trailingAction.onClick}
+            type="button"
+          >
+            <TrailingIcon aria-hidden="true" className="h-4 w-4" />
+          </button>
+        ) : null}
       </div>
       {error ? (
         <p className="text-sm text-destructive" id={errorId} role="alert">
