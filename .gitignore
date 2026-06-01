@@ -11,12 +11,10 @@ coverage/
 # Runtime
 .env
 .env.*
-!.env.example
 *.log
 
 # Generated API client
 apps/api/openapi.json
-apps/web/src/generated/
 
 # System
 .DS_Store
