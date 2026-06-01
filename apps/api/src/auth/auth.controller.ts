@@ -10,6 +10,7 @@ import {
 import { ThrottlerGuard } from "@nestjs/throttler";
 
 import { ApiErrorResponseDto } from "../shared/http/api-error-response.dto.js";
+import { createHttpValidationPipe } from "../app-http.js";
 import { RegisterRequestDto, RegisterResponseDto } from "./auth.dto.js";
 import { AuthService } from "./auth.service.js";
 
@@ -31,7 +32,9 @@ export class AuthController {
     type: ApiErrorResponseDto,
   })
   @UseGuards(ThrottlerGuard)
-  public register(@Body() request: RegisterRequestDto): Promise<RegisterResponseDto> {
+  public register(
+    @Body(createHttpValidationPipe(RegisterRequestDto)) request: RegisterRequestDto,
+  ): Promise<RegisterResponseDto> {
     return this.authService.register(request);
   }
 }

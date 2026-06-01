@@ -68,6 +68,38 @@ describe("RegisterForm fields", () => {
     expect(submitCount).toBe(0);
   });
 
+  it("blocks invalid email before calling the API", async () => {
+    let submitCount = 0;
+    const submitRegistration: RegisterSubmitter = () => {
+      submitCount += 1;
+      return Promise.resolve({ account: registeredAccount, ok: true });
+    };
+
+    renderRegisterForm(submitRegistration);
+    fillValidForm({ email: "email-invalide" });
+    fireEvent.click(screen.getByRole("button", { name: "Créer le compte" }));
+
+    expect(await screen.findByText("L'email doit être valide.")).toBeInTheDocument();
+    expect(submitCount).toBe(0);
+  });
+
+  it("blocks weak passwords before calling the API", async () => {
+    let submitCount = 0;
+    const submitRegistration: RegisterSubmitter = () => {
+      submitCount += 1;
+      return Promise.resolve({ account: registeredAccount, ok: true });
+    };
+
+    renderRegisterForm(submitRegistration);
+    fillValidForm({ password: "password", passwordConfirmation: "password" });
+    fireEvent.click(screen.getByRole("button", { name: "Créer le compte" }));
+
+    expect(
+      await screen.findByText("Le mot de passe doit contenir au moins 12 caractères."),
+    ).toBeInTheDocument();
+    expect(submitCount).toBe(0);
+  });
+
   it("toggles password fields visibility", () => {
     renderRegisterForm(createSuccessfulSubmitter());
 
