@@ -11,7 +11,7 @@
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
     "test:watch": "vitest",
-    "openapi:generate": "openapi-ts"
+    "openapi:generate": "openapi-ts && node scripts/mark-generated-typecheck-exempt.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

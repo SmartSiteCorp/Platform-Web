@@ -11,6 +11,7 @@ export default tseslint.config(
       "eslint.config.js",
       "next-env.d.ts",
       "postcss.config.mjs",
+      "scripts/*.mjs",
       "src/generated",
       "*.config.ts",
     ],
