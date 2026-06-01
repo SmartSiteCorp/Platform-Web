@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+env:
+  API_PORT: 4000
+  APP_ORIGIN: http://localhost:3000
+  CI: true
+  DATABASE_URL: postgres://smartsite:smartsite@127.0.0.1:5432/smartsite
+  JWT_ACCESS_EXPIRES_IN_SECONDS: 3600
+  NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+  NODE_ENV: test
+
+jobs:
+  quality:
+    name: Quality checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: smartsite
+          POSTGRES_PASSWORD: smartsite
+          POSTGRES_USER: smartsite
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U smartsite -d smartsite"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: npm
+          node-version: 22
+
+      - name: Resolve commit range
+        id: commits
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "range=${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event.before }}" =~ ^0+$ ]]; then
+            echo "range=${{ github.sha }}^..${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "range=${{ github.event.before }}..${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check commit messages
+        env:
+          COMMIT_RANGE: ${{ steps.commits.outputs.range }}
+        run: node .github/scripts/check-commit-messages.mjs
+
+      - name: Configure CI runtime secret
+        run: echo "JWT_ACCESS_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        run: npm run db:migrate
+
+      - name: Generate API client
+        run: npm run generate:api-client
+
+      - name: Check generated API client
+        run: git diff --exit-code -- apps/web/src/generated/api
+
+      - name: Check formatting
+        run: npm exec prettier -- --check .
+
+      - name: Run quality checks
+        run: npm run check
+
+      - name: Build
+        run: npm run build
