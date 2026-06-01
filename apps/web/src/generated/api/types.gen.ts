@@ -68,6 +68,10 @@ export type AuthControllerRegisterErrors = {
      * Email déjà utilisé.
      */
     409: ApiErrorResponseDto;
+    /**
+     * Trop de tentatives d'inscription.
+     */
+    429: ApiErrorResponseDto;
 };
 
 export type AuthControllerRegisterError = AuthControllerRegisterErrors[keyof AuthControllerRegisterErrors];

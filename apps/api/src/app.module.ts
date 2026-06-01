@@ -4,11 +4,13 @@ import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from "./auth/auth.module.js";
 import { DatabaseModule } from "./database/database.module.js";
 import { HealthModule } from "./health/health.module.js";
+import { getEnvironmentFilePaths } from "./shared/config/environment.js";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       cache: true,
+      envFilePath: getEnvironmentFilePaths(),
       isGlobal: true,
     }),
     AuthModule,
