@@ -1,11 +1,13 @@
 import { Body, Controller, Inject, Post } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiTags,
 } from "@nestjs/swagger";
 
+import { ApiErrorResponseDto } from "../shared/http/api-error-response.dto.js";
 import { RegisterRequestDto, RegisterResponseDto } from "./auth.dto.js";
 import { AuthService } from "./auth.service.js";
 
@@ -15,9 +17,13 @@ export class AuthController {
   public constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   @Post("register")
+  @ApiBody({ type: RegisterRequestDto })
   @ApiCreatedResponse({ type: RegisterResponseDto })
-  @ApiBadRequestResponse({ description: "Données d'inscription invalides." })
-  @ApiConflictResponse({ description: "Email déjà utilisé." })
+  @ApiBadRequestResponse({
+    description: "Données d'inscription invalides.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiConflictResponse({ description: "Email déjà utilisé.", type: ApiErrorResponseDto })
   public register(@Body() request: RegisterRequestDto): Promise<RegisterResponseDto> {
     return this.authService.register(request);
   }

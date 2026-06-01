@@ -35,7 +35,7 @@ export class AuthService {
     const normalizedRequest = this.normalizeRegisterRequest(request);
 
     if (!isPasswordCompliant(normalizedRequest.password)) {
-      throw new BadRequestException("Le mot de passe ne respecte pas les règles de sécurité.");
+      throw new BadRequestException(["Le mot de passe ne respecte pas les règles de sécurité."]);
     }
 
     const passwordHash = await this.passwordHasher.hashPassword(normalizedRequest.password);
@@ -49,7 +49,7 @@ export class AuthService {
     });
 
     if (!account) {
-      throw new ConflictException("Un compte existe déjà avec cet email.");
+      throw new ConflictException(["Un compte existe déjà avec cet email."]);
     }
 
     const accessToken = await this.tokenSigner.signRegistrationToken(account);
@@ -84,7 +84,7 @@ export class AuthService {
     const normalizedValue = value.trim();
 
     if (!normalizedValue) {
-      throw new BadRequestException(message);
+      throw new BadRequestException([message]);
     }
 
     return normalizedValue;

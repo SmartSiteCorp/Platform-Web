@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 
 import { DatabaseModule } from "../database/database.module.js";
@@ -12,12 +13,15 @@ import { PasswordHasherService } from "./password-hasher.service.js";
 @Module({
   controllers: [AuthController],
   imports: [
+    ConfigModule,
     DatabaseModule,
-    JwtModule.register({
-      secret: getJwtAccessSecret(),
-      signOptions: {
-        expiresIn: getJwtAccessExpiresInSeconds(),
-      },
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: getJwtAccessSecret(),
+        signOptions: {
+          expiresIn: getJwtAccessExpiresInSeconds(),
+        },
+      }),
     }),
   ],
   providers: [AuthRepository, AuthService, AuthTokenService, PasswordHasherService],
