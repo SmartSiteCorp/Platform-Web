@@ -3,7 +3,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses } from './types.gen';
+import type { AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -29,3 +29,19 @@ export const authControllerRegister = <ThrowOnError extends boolean = false>(opt
 });
 
 export const healthControllerGetHealth = <ThrowOnError extends boolean = false>(options?: Options<HealthControllerGetHealthData, ThrowOnError>) => (options?.client ?? client).get<HealthControllerGetHealthResponses, unknown, ThrowOnError>({ url: '/api/health', ...options });
+
+export const organizationsControllerGetOrganization = <ThrowOnError extends boolean = false>(options: Options<OrganizationsControllerGetOrganizationData, ThrowOnError>) => (options.client ?? client).get<OrganizationsControllerGetOrganizationResponses, OrganizationsControllerGetOrganizationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/organizations/{id}',
+    ...options
+});
+
+export const organizationsControllerUpdateOrganization = <ThrowOnError extends boolean = false>(options: Options<OrganizationsControllerUpdateOrganizationData, ThrowOnError>) => (options.client ?? client).put<OrganizationsControllerUpdateOrganizationResponses, OrganizationsControllerUpdateOrganizationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/organizations/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});

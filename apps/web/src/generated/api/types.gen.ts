@@ -52,6 +52,23 @@ export type HealthResponseDto = {
     timestamp: string;
 };
 
+export type OrganizationResponseDto = {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type UpdateOrganizationRequestDto = {
+    name: string;
+    email: string;
+    phone?: string | null;
+    address?: string | null;
+};
+
 export type AuthControllerRegisterData = {
     body: RegisterRequestDto;
     path?: never;
@@ -94,3 +111,71 @@ export type HealthControllerGetHealthResponses = {
 };
 
 export type HealthControllerGetHealthResponse = HealthControllerGetHealthResponses[keyof HealthControllerGetHealthResponses];
+
+export type OrganizationsControllerGetOrganizationData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{id}';
+};
+
+export type OrganizationsControllerGetOrganizationErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Accès organisation interdit.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Organisation introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type OrganizationsControllerGetOrganizationError = OrganizationsControllerGetOrganizationErrors[keyof OrganizationsControllerGetOrganizationErrors];
+
+export type OrganizationsControllerGetOrganizationResponses = {
+    200: OrganizationResponseDto;
+};
+
+export type OrganizationsControllerGetOrganizationResponse = OrganizationsControllerGetOrganizationResponses[keyof OrganizationsControllerGetOrganizationResponses];
+
+export type OrganizationsControllerUpdateOrganizationData = {
+    body: UpdateOrganizationRequestDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{id}';
+};
+
+export type OrganizationsControllerUpdateOrganizationErrors = {
+    /**
+     * Données organisation invalides.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Accès organisation interdit.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Organisation introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type OrganizationsControllerUpdateOrganizationError = OrganizationsControllerUpdateOrganizationErrors[keyof OrganizationsControllerUpdateOrganizationErrors];
+
+export type OrganizationsControllerUpdateOrganizationResponses = {
+    200: OrganizationResponseDto;
+};
+
+export type OrganizationsControllerUpdateOrganizationResponse = OrganizationsControllerUpdateOrganizationResponses[keyof OrganizationsControllerUpdateOrganizationResponses];
