@@ -14,6 +14,7 @@ import { AuthController } from "./auth.controller.js";
 import { AuthRepository } from "./auth.repository.js";
 import { AuthService } from "./auth.service.js";
 import { AuthTokenService } from "./auth-token.service.js";
+import { JwtAuthGuard } from "./jwt-auth.guard.js";
 import { PasswordHasherService } from "./password-hasher.service.js";
 
 @Module({
@@ -40,6 +41,7 @@ import { PasswordHasherService } from "./password-hasher.service.js";
       ],
     }),
   ],
-  providers: [AuthRepository, AuthService, AuthTokenService, PasswordHasherService],
+  exports: [JwtAuthGuard, JwtModule],
+  providers: [AuthRepository, AuthService, AuthTokenService, JwtAuthGuard, PasswordHasherService],
 })
 export class AuthModule {}

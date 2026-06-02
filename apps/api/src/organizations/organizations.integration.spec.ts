@@ -1,0 +1,247 @@
+import "reflect-metadata";
+
+import type { INestApplication } from "@nestjs/common";
+import { Test } from "@nestjs/testing";
+import { randomUUID } from "node:crypto";
+import type { Server } from "node:http";
+import type { QueryResultRow } from "pg";
+import request, { type Response } from "supertest";
+import { afterAll, afterEach, beforeAll, expect, it } from "vitest";
+
+import { configureHttpApp } from "../app-http.js";
+import { AppModule } from "../app.module.js";
+import type { RegisterResponseDto } from "../auth/auth.dto.js";
+import { DatabaseService } from "../database/database.service.js";
+import type { OrganizationResponseDto } from "./organizations.dto.js";
+
+interface RegisterPayload {
+  readonly organizationName: string;
+  readonly email: string;
+  readonly password: string;
+  readonly firstName: string;
+  readonly lastName: string;
+}
+
+interface OrganizationDatabaseRow extends QueryResultRow {
+  readonly name: string;
+  readonly email: string;
+  readonly phone: string | null;
+  readonly address: string | null;
+}
+
+interface ApiErrorResponse {
+  readonly message: readonly string[];
+  readonly statusCode: number;
+}
+
+interface RegisteredTestAccount {
+  readonly request: RegisterPayload;
+  readonly response: RegisterResponseDto;
+}
+
+const createdEmails = new Set<string>();
+let app: INestApplication<Server>;
+let databaseService: DatabaseService;
+
+beforeAll(async () => {
+  process.env.AUTH_REGISTER_RATE_LIMIT_LIMIT = "100";
+  process.env.AUTH_REGISTER_RATE_LIMIT_TTL_SECONDS = "60";
+
+  const testingModule = await Test.createTestingModule({
+    imports: [AppModule],
+  }).compile();
+
+  app = testingModule.createNestApplication<INestApplication<Server>>();
+  configureHttpApp(app);
+  await app.init();
+
+  databaseService = app.get(DatabaseService);
+});
+
+afterEach(async () => {
+  for (const email of createdEmails) {
+    await deleteRegisteredAccount(email);
+  }
+
+  createdEmails.clear();
+});
+
+afterAll(async () => {
+  await app.close();
+});
+
+it("returns the authenticated admin organization", async () => {
+  const account = await createRegisteredAccount();
+
+  const response = await request(getHttpServer())
+    .get(`/api/organizations/${account.response.organization.id}`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .expect(200);
+  const responseBody = parseOrganizationResponse(response);
+
+  expect(responseBody).toMatchObject({
+    email: account.request.email,
+    id: account.response.organization.id,
+    name: account.request.organizationName,
+  });
+});
+
+it("updates and persists organization information", async () => {
+  const account = await createRegisteredAccount();
+
+  const response = await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({
+      address: " 12 rue des Artisans, 75001 Paris ",
+      email: "CONTACT@SMARTSITE.FR",
+      name: " Stern Tech Renovation ",
+      phone: " +33123456789 ",
+    })
+    .expect(200);
+  const responseBody = parseOrganizationResponse(response);
+  const databaseRow = await findOrganization(account.response.organization.id);
+
+  expect(responseBody).toMatchObject({
+    address: "12 rue des Artisans, 75001 Paris",
+    email: "contact@smartsite.fr",
+    name: "Stern Tech Renovation",
+    phone: "+33123456789",
+  });
+  expect(databaseRow).toStrictEqual({
+    address: "12 rue des Artisans, 75001 Paris",
+    email: "contact@smartsite.fr",
+    name: "Stern Tech Renovation",
+    phone: "+33123456789",
+  });
+});
+
+it("rejects organization access without JWT", async () => {
+  const account = await createRegisteredAccount();
+
+  await request(getHttpServer())
+    .get(`/api/organizations/${account.response.organization.id}`)
+    .expect(401);
+});
+
+it("rejects access to another organization", async () => {
+  const firstAccount = await createRegisteredAccount();
+  const secondAccount = await createRegisteredAccount();
+
+  await request(getHttpServer())
+    .get(`/api/organizations/${secondAccount.response.organization.id}`)
+    .set("Authorization", `Bearer ${firstAccount.response.accessToken}`)
+    .expect(403);
+});
+
+it("rejects users whose admin role was removed", async () => {
+  const account = await createRegisteredAccount();
+
+  await removeUserRoles(account.response.user.id);
+
+  await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({
+      email: "contact@smartsite.fr",
+      name: "Stern Tech",
+    })
+    .expect(403);
+});
+
+it("rejects invalid organization payloads", async () => {
+  const account = await createRegisteredAccount();
+
+  const response = await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({
+      email: "email invalide",
+      name: "",
+    })
+    .expect(400);
+  const responseBody = parseApiErrorResponse(response);
+
+  expect(responseBody.message).toContain("Le nom d'entreprise est obligatoire.");
+  expect(responseBody.message).toContain("L'email doit être valide.");
+});
+
+function getHttpServer(): Server {
+  return app.getHttpServer();
+}
+
+async function createRegisteredAccount(): Promise<RegisteredTestAccount> {
+  const registrationRequest = createRegisterRequest();
+  createdEmails.add(registrationRequest.email);
+
+  const response = await request(getHttpServer())
+    .post("/api/auth/register")
+    .send(registrationRequest)
+    .expect(201);
+
+  return {
+    request: registrationRequest,
+    response: parseRegisterResponse(response),
+  };
+}
+
+function createRegisterRequest(): RegisterPayload {
+  const identifier = randomUUID();
+
+  return {
+    email: `organization-${identifier}@smartsite.test`,
+    firstName: "Andreea",
+    lastName: "Rauta",
+    organizationName: "Stern Tech",
+    password: "SmartSite.2026",
+  };
+}
+
+async function findOrganization(organizationId: string): Promise<OrganizationDatabaseRow> {
+  const result = await databaseService.query<OrganizationDatabaseRow>(
+    `
+      SELECT name, email, phone, address
+      FROM organizations
+      WHERE id = $1
+    `,
+    [organizationId],
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error(`Organization not found: ${organizationId}.`);
+  }
+
+  return row;
+}
+
+async function removeUserRoles(userId: string): Promise<void> {
+  await databaseService.query("DELETE FROM user_roles WHERE user_id = $1", [userId]);
+}
+
+async function deleteRegisteredAccount(email: string): Promise<void> {
+  await databaseService.query(
+    `
+      WITH deleted_users AS (
+        DELETE FROM users
+        WHERE email = $1
+        RETURNING organization_id
+      )
+      DELETE FROM organizations
+      WHERE id IN (SELECT organization_id FROM deleted_users)
+    `,
+    [email],
+  );
+}
+
+function parseRegisterResponse(response: Response): RegisterResponseDto {
+  return JSON.parse(response.text) as RegisterResponseDto;
+}
+
+function parseOrganizationResponse(response: Response): OrganizationResponseDto {
+  return JSON.parse(response.text) as OrganizationResponseDto;
+}
+
+function parseApiErrorResponse(response: Response): ApiErrorResponse {
+  return JSON.parse(response.text) as ApiErrorResponse;
+}
