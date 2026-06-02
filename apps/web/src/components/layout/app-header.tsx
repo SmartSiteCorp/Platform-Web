@@ -1,7 +1,8 @@
-import { Bell, LayoutDashboard, Plane, Settings } from "lucide-react";
+import { Bell, LayoutDashboard, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
+import { SmartSiteLogo } from "@/components/brand/smartsite-logo";
 import { cn } from "@/lib/utils";
 
 type AppHeaderItem = "dashboard" | "organization-settings";
@@ -48,8 +49,8 @@ export function AppHeader({ activeItem }: AppHeaderProps) {
 function HeaderBrand() {
   return (
     <div className="flex items-center gap-3">
-      <div className="rounded-lg bg-primary p-3 text-primary-foreground">
-        <Plane aria-hidden="true" className="h-6 w-6" />
+      <div className="inline-flex items-center justify-center rounded-lg bg-white/90 p-1">
+        <SmartSiteLogo className="h-12 w-12" priority />
       </div>
       <div>
         <p className="text-xl font-bold tracking-normal">SmartSite</p>
@@ -91,7 +92,7 @@ function HeaderNavLink({
 
   if (item.id === "dashboard") {
     return (
-      <Link className={linkClasses} href="/">
+      <Link className={linkClasses} href="/dashboard">
         {linkContent}
       </Link>
     );

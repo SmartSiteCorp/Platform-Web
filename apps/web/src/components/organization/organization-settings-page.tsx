@@ -246,9 +246,9 @@ function MissingSessionPanel() {
         </p>
         <Link
           className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-          href="/register"
+          href="/login"
         >
-          Créer une organisation
+          Se connecter
         </Link>
       </CardContent>
     </Card>
