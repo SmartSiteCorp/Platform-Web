@@ -7,6 +7,6 @@ export const metadata: Metadata = {
   title: "Connexion - SmartSite",
 };
 
-export default function HomePage() {
+export default function LoginRoute() {
   return <LoginPage />;
 }

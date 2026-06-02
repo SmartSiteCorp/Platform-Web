@@ -64,7 +64,7 @@ describe("RegisterPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Créer le compte" }));
 
     await waitFor(() => {
-      expect(routerMock.push).toHaveBeenCalledWith("/");
+      expect(routerMock.push).toHaveBeenCalledWith("/dashboard");
     });
     expect(window.localStorage.getItem(getAuthSessionStorageKey())).toBe(
       JSON.stringify(registeredAccount),

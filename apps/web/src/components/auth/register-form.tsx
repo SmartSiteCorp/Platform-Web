@@ -1,20 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AlertCircle,
-  Building2,
-  Eye,
-  EyeOff,
-  Loader2,
-  Lock,
-  Mail,
-  User,
-  UserPlus,
-} from "lucide-react";
+import { Building2, Eye, EyeOff, Loader2, Lock, Mail, User, UserPlus } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { useForm, type FieldErrors, type UseFormRegister } from "react-hook-form";
 
+import { AuthApiError } from "@/components/auth/auth-api-error";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TextField } from "@/components/ui/text-field";
@@ -67,11 +59,12 @@ export function RegisterForm({ onRegistrationCompleted, submitRegistration }: Re
       </CardHeader>
       <CardContent>
         <form className="space-y-4" noValidate onSubmit={(event) => void submitForm(event)}>
-          <RegisterApiError message={apiError} />
+          <AuthApiError message={apiError} />
           <RegisterIdentityFields errors={errors} register={register} />
           <RegisterCredentialFields errors={errors} register={register} />
           <PasswordHint />
           <RegisterSubmitButton isSubmitting={isSubmitting} />
+          <RegisterLoginLink />
         </form>
       </CardContent>
     </Card>
@@ -187,19 +180,14 @@ function RegisterSubmitButton({ isSubmitting }: { readonly isSubmitting: boolean
   );
 }
 
-function RegisterApiError({ message }: { readonly message: string | null }) {
-  if (!message) {
-    return null;
-  }
-
+function RegisterLoginLink() {
   return (
-    <div
-      className="flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
-      role="alert"
-    >
-      <AlertCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-      <span>{message}</span>
-    </div>
+    <p className="text-center text-sm text-muted-foreground">
+      Déjà un compte ?{" "}
+      <Link className="font-semibold text-primary hover:underline" href="/login">
+        Se connecter
+      </Link>
+    </p>
   );
 }
 
