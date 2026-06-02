@@ -33,16 +33,22 @@ export interface RegisteredAccount {
   readonly user: RegisteredUser;
 }
 
+export interface LoginAccount extends RegisteredAccount {
+  readonly passwordHash: string;
+}
+
 export interface AuthAccountRepository {
   createOrganizationAdmin(input: CreateOrganizationAdminInput): Promise<RegisteredAccount | null>;
+  findAccountByEmail(email: string): Promise<LoginAccount | null>;
 }
 
 export interface PasswordHasher {
   hashPassword(password: string): Promise<string>;
+  verifyPassword(passwordHash: string, password: string): Promise<boolean>;
 }
 
-export interface RegistrationTokenSigner {
-  signRegistrationToken(account: RegisteredAccount): Promise<string>;
+export interface AuthTokenSigner {
+  signAccessToken(account: RegisteredAccount): Promise<string>;
 }
 
 export interface AccessTokenPayload {

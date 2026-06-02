@@ -1,17 +1,24 @@
-import { Body, Controller, Inject, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, HttpCode, Inject, Post, UseGuards } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiTags,
   ApiTooManyRequestsResponse,
+  ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { ThrottlerGuard } from "@nestjs/throttler";
 
 import { ApiErrorResponseDto } from "../shared/http/api-error-response.dto.js";
 import { createHttpValidationPipe } from "../app-http.js";
-import { RegisterRequestDto, RegisterResponseDto } from "./auth.dto.js";
+import {
+  LoginRequestDto,
+  LoginResponseDto,
+  RegisterRequestDto,
+  RegisterResponseDto,
+} from "./auth.dto.js";
 import { AuthService } from "./auth.service.js";
 
 @ApiTags("Auth")
@@ -36,5 +43,23 @@ export class AuthController {
     @Body(createHttpValidationPipe(RegisterRequestDto)) request: RegisterRequestDto,
   ): Promise<RegisterResponseDto> {
     return this.authService.register(request);
+  }
+
+  @Post("login")
+  @HttpCode(200)
+  @ApiBody({ type: LoginRequestDto })
+  @ApiOkResponse({ type: LoginResponseDto })
+  @ApiBadRequestResponse({
+    description: "Données de connexion invalides.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Identifiants incorrects.",
+    type: ApiErrorResponseDto,
+  })
+  public login(
+    @Body(createHttpValidationPipe(LoginRequestDto)) request: LoginRequestDto,
+  ): Promise<LoginResponseDto> {
+    return this.authService.login(request);
   }
 }
