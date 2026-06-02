@@ -6,11 +6,12 @@ import { Test } from "@nestjs/testing";
 import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
 import request, { type Response } from "supertest";
-import { afterAll, afterEach, beforeAll, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
 
 import { configureHttpApp } from "../app-http.js";
 import { AppModule } from "../app.module.js";
 import { DatabaseService } from "../database/database.service.js";
+import { getJwtAccessExpiresInSeconds } from "../shared/config/environment.js";
 import type { AccessTokenPayload } from "./auth.types.js";
 import type { LoginResponseDto, RegisterResponseDto } from "./auth.dto.js";
 
@@ -30,6 +31,11 @@ interface RegisteredTestAccount {
 interface ApiErrorResponse {
   readonly message: readonly string[];
   readonly statusCode: number;
+}
+
+interface AccessTokenWithTimestamps extends AccessTokenPayload {
+  readonly exp: number;
+  readonly iat: number;
 }
 
 const invalidCredentialsMessage = "Email ou mot de passe incorrect.";
@@ -92,14 +98,17 @@ it("logs in an existing user and returns the account session", async () => {
   });
   expect(responseBody.accessToken.length).toBeGreaterThan(20);
 
-  await expect(
-    jwtService.verifyAsync<AccessTokenPayload>(responseBody.accessToken),
-  ).resolves.toMatchObject({
+  const accessTokenPayload = await jwtService.verifyAsync<AccessTokenWithTimestamps>(
+    responseBody.accessToken,
+  );
+
+  expect(accessTokenPayload).toMatchObject({
     email: account.request.email,
     organizationId: account.response.organization.id,
     roles: ["administrateur"],
     sub: account.response.user.id,
   });
+  expect(accessTokenPayload.exp - accessTokenPayload.iat).toBe(getJwtAccessExpiresInSeconds());
 });
 
 it("rejects login when the email does not exist", async () => {
@@ -128,6 +137,36 @@ it("rejects login when the password is incorrect", async () => {
   const responseBody = parseApiErrorResponse(response);
 
   expect(responseBody.message).toContain(invalidCredentialsMessage);
+});
+
+it("keeps authentication errors free from passwords and tokens", async () => {
+  const account = await createRegisteredAccount();
+  const submittedPassword = "WrongPassword.2026";
+  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+  try {
+    const response = await request(getHttpServer())
+      .post("/api/auth/login")
+      .send({
+        email: account.request.email,
+        password: submittedPassword,
+      })
+      .expect(401);
+    const responseBody = parseApiErrorResponse(response);
+
+    expect(responseBody.message).toStrictEqual([invalidCredentialsMessage]);
+    expect(response.text).not.toContain(submittedPassword);
+    expect(response.text).not.toContain("accessToken");
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(logSpy).not.toHaveBeenCalled();
+    expect(warnSpy).not.toHaveBeenCalled();
+  } finally {
+    errorSpy.mockRestore();
+    logSpy.mockRestore();
+    warnSpy.mockRestore();
+  }
 });
 
 it("rejects invalid login payloads", async () => {

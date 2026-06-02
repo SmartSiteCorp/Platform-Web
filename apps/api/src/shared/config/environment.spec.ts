@@ -8,6 +8,7 @@ import {
   getApiPort,
   getAppOrigin,
   getEnvironmentFilePaths,
+  getJwtAccessExpiresInSeconds,
   getJwtAccessSecret,
   getNodeEnvironment,
   getRegisterRateLimitLimit,
@@ -114,5 +115,23 @@ describe("environment", () => {
     } finally {
       rmSync(temporaryDirectory, { force: true, recursive: true });
     }
+  });
+});
+
+describe("JWT environment", () => {
+  it("requires the JWT secret from the environment", () => {
+    delete process.env.JWT_ACCESS_SECRET;
+
+    expect(() => getJwtAccessSecret()).toThrow("JWT_ACCESS_SECRET is required.");
+  });
+
+  it("uses the configured JWT access token expiration", () => {
+    delete process.env.JWT_ACCESS_EXPIRES_IN_SECONDS;
+
+    expect(getJwtAccessExpiresInSeconds()).toBe(25200);
+
+    process.env.JWT_ACCESS_EXPIRES_IN_SECONDS = "900";
+
+    expect(getJwtAccessExpiresInSeconds()).toBe(900);
   });
 });

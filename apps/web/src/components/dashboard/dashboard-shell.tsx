@@ -1,14 +1,23 @@
-import { Boxes, FileText, ShieldCheck } from "lucide-react";
+"use client";
+
+import { Boxes, FileText, Loader2, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { AppHeader } from "@/components/layout/app-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useRequiredAuthSession } from "@/lib/use-auth-session";
 import { dashboardStats, dashboardTasks, moduleStats } from "./dashboard-data";
 import { StatCard } from "./stat-card";
 
 export function DashboardShell() {
+  const { isCheckingSession, session } = useRequiredAuthSession();
+
+  if (isCheckingSession || !session) {
+    return <DashboardSessionLoading />;
+  }
+
   return (
     <main className="min-h-screen bg-background">
       <AppHeader activeItem="dashboard" />
@@ -28,6 +37,22 @@ export function DashboardShell() {
         </div>
 
         <SmartSitePrinciples />
+      </section>
+    </main>
+  );
+}
+
+function DashboardSessionLoading() {
+  return (
+    <main className="min-h-screen bg-background">
+      <AppHeader activeItem="dashboard" />
+      <section className="container py-8">
+        <Card>
+          <CardContent className="flex min-h-48 items-center justify-center gap-3 p-8 text-muted-foreground">
+            <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" />
+            <span>Vérification de la session...</span>
+          </CardContent>
+        </Card>
       </section>
     </main>
   );
