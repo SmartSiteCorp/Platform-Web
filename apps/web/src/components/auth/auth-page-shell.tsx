@@ -79,13 +79,7 @@ function AuthIntroSteps({ steps }: { readonly steps: readonly AuthIntroStep[] })
   );
 }
 
-function IntroStep({
-  icon: Icon,
-  label,
-}: {
-  readonly icon: LucideIcon;
-  readonly label: string;
-}) {
+function IntroStep({ icon: Icon, label }: { readonly icon: LucideIcon; readonly label: string }) {
   return (
     <div className="flex min-h-14 items-center gap-3 rounded-md border border-white/20 bg-white/10 p-4 text-white backdrop-blur-sm">
       <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-success" />

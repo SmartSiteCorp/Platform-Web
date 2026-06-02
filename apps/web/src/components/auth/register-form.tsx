@@ -1,16 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Building2,
-  Eye,
-  EyeOff,
-  Loader2,
-  Lock,
-  Mail,
-  User,
-  UserPlus,
-} from "lucide-react";
+import { Building2, Eye, EyeOff, Loader2, Lock, Mail, User, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm, type FieldErrors, type UseFormRegister } from "react-hook-form";

@@ -8,11 +8,7 @@ interface SmartSiteLogoProps {
   readonly priority?: boolean;
 }
 
-export function SmartSiteLogo({
-  className,
-  imageClassName,
-  priority = false,
-}: SmartSiteLogoProps) {
+export function SmartSiteLogo({ className, imageClassName, priority = false }: SmartSiteLogoProps) {
   return (
     <span className={cn("relative inline-flex shrink-0 overflow-hidden", className)}>
       <Image

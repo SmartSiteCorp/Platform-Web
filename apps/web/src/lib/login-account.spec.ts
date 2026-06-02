@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  AuthControllerLoginError,
-  LoginRequestDto,
-  LoginResponseDto,
-} from "@/generated/api";
+import type { AuthControllerLoginError, LoginRequestDto, LoginResponseDto } from "@/generated/api";
 import { loginAccount } from "@/lib/login-account";
 
 interface LoginApiOptions {
