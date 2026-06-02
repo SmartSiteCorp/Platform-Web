@@ -1,6 +1,7 @@
-import { Bell, Boxes, FileText, Plane, ShieldCheck } from "lucide-react";
+import { Boxes, FileText, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { AppHeader } from "@/components/layout/app-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -10,7 +11,7 @@ import { StatCard } from "./stat-card";
 export function DashboardShell() {
   return (
     <main className="min-h-screen bg-background">
-      <DashboardHeader />
+      <AppHeader activeItem="dashboard" />
 
       <section className="container py-8">
         <DashboardIntro />
@@ -29,29 +30,6 @@ export function DashboardShell() {
         <SmartSitePrinciples />
       </section>
     </main>
-  );
-}
-
-function DashboardHeader() {
-  return (
-    <header className="border-b border-border bg-accent text-accent-foreground">
-      <div className="container flex h-20 items-center justify-between gap-6">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-primary p-3 text-primary-foreground">
-            <Plane className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-xl font-bold tracking-normal">SmartSite</p>
-            <p className="text-sm text-accent-foreground/80">
-              Supervision intelligente de chantier
-            </p>
-          </div>
-        </div>
-        <button className="rounded-lg border border-white/20 p-3 text-accent-foreground">
-          <Bell className="h-5 w-5" />
-        </button>
-      </div>
-    </header>
   );
 }
 
