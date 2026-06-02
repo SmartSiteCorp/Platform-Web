@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { hash } from "argon2";
+import { hash, verify } from "argon2";
 
 import type { PasswordHasher } from "./auth.types.js";
 
@@ -7,5 +7,9 @@ import type { PasswordHasher } from "./auth.types.js";
 export class PasswordHasherService implements PasswordHasher {
   public async hashPassword(password: string): Promise<string> {
     return hash(password);
+  }
+
+  public async verifyPassword(passwordHash: string, password: string): Promise<boolean> {
+    return verify(passwordHash, password);
   }
 }

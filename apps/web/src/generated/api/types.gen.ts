@@ -46,6 +46,18 @@ export type ApiErrorResponseDto = {
     error?: string;
 };
 
+export type LoginRequestDto = {
+    email: string;
+    password: string;
+};
+
+export type LoginResponseDto = {
+    user: RegisteredUserDto;
+    organization: RegisteredOrganizationDto;
+    tokenType: string;
+    accessToken: string;
+};
+
 export type HealthResponseDto = {
     status: string;
     message: string;
@@ -98,6 +110,32 @@ export type AuthControllerRegisterResponses = {
 };
 
 export type AuthControllerRegisterResponse = AuthControllerRegisterResponses[keyof AuthControllerRegisterResponses];
+
+export type AuthControllerLoginData = {
+    body: LoginRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/auth/login';
+};
+
+export type AuthControllerLoginErrors = {
+    /**
+     * Données de connexion invalides.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Identifiants incorrects.
+     */
+    401: ApiErrorResponseDto;
+};
+
+export type AuthControllerLoginError = AuthControllerLoginErrors[keyof AuthControllerLoginErrors];
+
+export type AuthControllerLoginResponses = {
+    200: LoginResponseDto;
+};
+
+export type AuthControllerLoginResponse = AuthControllerLoginResponses[keyof AuthControllerLoginResponses];
 
 export type HealthControllerGetHealthData = {
     body?: never;

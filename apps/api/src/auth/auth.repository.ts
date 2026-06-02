@@ -7,6 +7,7 @@ import {
   organizationAdminRoleCode,
   type AuthAccountRepository,
   type CreateOrganizationAdminInput,
+  type LoginAccount,
   type RegisteredAccount,
   type RegisteredOrganization,
   type RegisteredUser,
@@ -39,6 +40,23 @@ interface UserRow extends QueryResultRow {
   readonly created_at: Date;
 }
 
+interface LoginAccountRow extends QueryResultRow {
+  readonly organization_created_at: Date;
+  readonly organization_email: string | null;
+  readonly organization_id: string;
+  readonly organization_name: string;
+  readonly password_hash: string;
+  readonly role_codes: string[];
+  readonly user_created_at: Date;
+  readonly user_email: string;
+  readonly user_first_name: string;
+  readonly user_id: string;
+  readonly user_last_name: string;
+  readonly user_organization_id: string;
+  readonly user_phone: string | null;
+  readonly user_status: string;
+}
+
 @Injectable()
 export class AuthRepository implements AuthAccountRepository {
   public constructor(@Inject(DatabaseService) private readonly databaseService: DatabaseService) {}
@@ -67,6 +85,41 @@ export class AuthRepository implements AuthAccountRepository {
         },
       };
     });
+  }
+
+  public async findAccountByEmail(email: string): Promise<LoginAccount | null> {
+    const result = await this.databaseService.query<LoginAccountRow>(
+      `
+        SELECT
+          users.id AS user_id,
+          users.organization_id AS user_organization_id,
+          users.email AS user_email,
+          users.password_hash,
+          users.first_name AS user_first_name,
+          users.last_name AS user_last_name,
+          users.phone AS user_phone,
+          users.status AS user_status,
+          users.created_at AS user_created_at,
+          organizations.id AS organization_id,
+          organizations.name AS organization_name,
+          organizations.email AS organization_email,
+          organizations.created_at AS organization_created_at,
+          COALESCE(
+            array_agg(roles.code ORDER BY roles.code) FILTER (WHERE roles.code IS NOT NULL),
+            ARRAY[]::varchar[]
+          ) AS role_codes
+        FROM users
+        INNER JOIN organizations ON organizations.id = users.organization_id
+        LEFT JOIN user_roles ON user_roles.user_id = users.id
+        LEFT JOIN roles ON roles.id = user_roles.role_id
+        WHERE users.email = $1
+        GROUP BY users.id, organizations.id
+      `,
+      [email],
+    );
+    const row = result.rows[0];
+
+    return row ? this.mapLoginAccount(row) : null;
   }
 
   private async lockEmail(transaction: DatabaseExecutor, email: string): Promise<void> {
@@ -137,6 +190,29 @@ export class AuthRepository implements AuthAccountRepository {
       organizationId: row.organization_id,
       phone: row.phone,
       status: row.status,
+    };
+  }
+
+  private mapLoginAccount(row: LoginAccountRow): LoginAccount {
+    return {
+      organization: {
+        createdAt: row.organization_created_at.toISOString(),
+        email: row.organization_email,
+        id: row.organization_id,
+        name: row.organization_name,
+      },
+      passwordHash: row.password_hash,
+      user: {
+        createdAt: row.user_created_at.toISOString(),
+        email: row.user_email,
+        firstName: row.user_first_name,
+        id: row.user_id,
+        lastName: row.user_last_name,
+        organizationId: row.user_organization_id,
+        phone: row.user_phone,
+        roles: row.role_codes,
+        status: row.user_status,
+      },
     };
   }
 

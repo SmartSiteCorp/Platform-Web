@@ -1,13 +1,14 @@
-import { BadRequestException, ConflictException } from "@nestjs/common";
+import { BadRequestException, ConflictException, UnauthorizedException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
 
 import { AuthService } from "./auth.service.js";
 import type {
   AuthAccountRepository,
   CreateOrganizationAdminInput,
+  LoginAccount,
   PasswordHasher,
   RegisteredAccount,
-  RegistrationTokenSigner,
+  AuthTokenSigner,
 } from "./auth.types.js";
 
 class FakeAuthRepository implements AuthAccountRepository {
@@ -23,29 +24,51 @@ class FakeAuthRepository implements AuthAccountRepository {
       this.nextAccount === undefined ? createRegisteredAccount(input) : this.nextAccount,
     );
   }
+
+  public findAccountByEmail(email: string): Promise<LoginAccount | null> {
+    this.requestedLoginEmail = email;
+
+    return Promise.resolve(this.nextLoginAccount);
+  }
+
+  public nextLoginAccount: LoginAccount | null = createLoginAccount();
+  public requestedLoginEmail: string | null = null;
 }
 
 class FakePasswordHasher implements PasswordHasher {
   public hashedPassword: string | null = null;
+  public nextPasswordMatches = true;
+  public verifiedPassword: VerifiedPassword | null = null;
 
   public hashPassword(password: string): Promise<string> {
     this.hashedPassword = password;
 
     return Promise.resolve(`hashed-${password}`);
   }
+
+  public verifyPassword(passwordHash: string, password: string): Promise<boolean> {
+    this.verifiedPassword = { password, passwordHash };
+
+    return Promise.resolve(this.nextPasswordMatches);
+  }
 }
 
-class FakeTokenSigner implements RegistrationTokenSigner {
+class FakeTokenSigner implements AuthTokenSigner {
   public signedAccount: RegisteredAccount | null = null;
 
-  public signRegistrationToken(account: RegisteredAccount): Promise<string> {
+  public signAccessToken(account: RegisteredAccount): Promise<string> {
     this.signedAccount = account;
 
     return Promise.resolve("access-token");
   }
 }
 
-describe("AuthService", () => {
+interface VerifiedPassword {
+  readonly password: string;
+  readonly passwordHash: string;
+}
+
+describe("AuthService register", () => {
   it("creates an organization admin account and returns an access token", async () => {
     const { repository, passwordHasher, service, tokenSigner } = createService();
 
@@ -106,6 +129,56 @@ describe("AuthService", () => {
   });
 });
 
+describe("AuthService login", () => {
+  it("logs in an existing user and returns an access token", async () => {
+    const { passwordHasher, repository, service, tokenSigner } = createService();
+
+    const result = await service.login({
+      email: " ANDREEA@SMARTSITE.FR ",
+      password: "SmartSite.2026",
+    });
+
+    expect(repository.requestedLoginEmail).toBe("andreea@smartsite.fr");
+    expect(passwordHasher.verifiedPassword).toStrictEqual({
+      password: "SmartSite.2026",
+      passwordHash: "stored-password-hash",
+    });
+    expect(tokenSigner.signedAccount?.user.id).toBe("user-id");
+    expect(result.accessToken).toBe("access-token");
+    expect(result.organization.id).toBe("organization-id");
+    expect(result.user.roles).toStrictEqual(["administrateur"]);
+  });
+
+  it("rejects login when the email is unknown", async () => {
+    const { passwordHasher, repository, service, tokenSigner } = createService();
+    repository.nextLoginAccount = null;
+
+    await expect(
+      service.login({
+        email: "missing@smartsite.fr",
+        password: "SmartSite.2026",
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    expect(passwordHasher.verifiedPassword).toBeNull();
+    expect(tokenSigner.signedAccount).toBeNull();
+  });
+
+  it("rejects login when the password does not match the stored hash", async () => {
+    const { passwordHasher, service, tokenSigner } = createService();
+    passwordHasher.nextPasswordMatches = false;
+
+    await expect(
+      service.login({
+        email: "andreea@smartsite.fr",
+        password: "WrongPassword.2026",
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    expect(tokenSigner.signedAccount).toBeNull();
+  });
+});
+
 function createService(): {
   readonly passwordHasher: FakePasswordHasher;
   readonly repository: FakeAuthRepository;
@@ -143,5 +216,19 @@ function createRegisteredAccount(input: CreateOrganizationAdminInput): Registere
       roles: ["administrateur"],
       status: "active",
     },
+  };
+}
+
+function createLoginAccount(): LoginAccount {
+  return {
+    ...createRegisteredAccount({
+      email: "andreea@smartsite.fr",
+      firstName: "Andreea",
+      lastName: "Rauta",
+      organizationName: "Stern Tech",
+      passwordHash: "stored-password-hash",
+      phone: null,
+    }),
+    passwordHash: "stored-password-hash",
   };
 }

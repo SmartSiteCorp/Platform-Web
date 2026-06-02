@@ -63,6 +63,23 @@ export class RegisterRequestDto {
   public readonly phone?: string;
 }
 
+export class LoginRequestDto {
+  @ApiProperty({ example: "andreea@smartsite.fr", maxLength: 320, type: String })
+  @IsEmail({}, { message: "L'email doit être valide." })
+  @MaxLength(320, { message: "L'email est trop long." })
+  public readonly email!: string;
+
+  @ApiProperty({
+    example: "Password123!",
+    maxLength: passwordMaxLength,
+    type: String,
+  })
+  @IsString({ message: "Le mot de passe doit être une chaîne de caractères." })
+  @IsNotEmpty({ message: "Le mot de passe est obligatoire." })
+  @MaxLength(passwordMaxLength, { message: "Le mot de passe est trop long." })
+  public readonly password!: string;
+}
+
 export class RegisteredOrganizationDto {
   @ApiProperty({ example: "3f66f364-24d1-4d84-bd8a-54de605cb281", type: String })
   public readonly id!: string;
@@ -119,3 +136,5 @@ export class RegisterResponseDto {
   @ApiProperty({ example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", type: String })
   public readonly accessToken!: string;
 }
+
+export class LoginResponseDto extends RegisterResponseDto {}

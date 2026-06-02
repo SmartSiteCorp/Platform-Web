@@ -1,12 +1,24 @@
-import { BadRequestException, ConflictException, Inject, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
 
-import { RegisterRequestDto, type RegisterResponseDto } from "./auth.dto.js";
+import {
+  LoginRequestDto,
+  type LoginResponseDto,
+  RegisterRequestDto,
+  type RegisterResponseDto,
+} from "./auth.dto.js";
 import { AuthRepository } from "./auth.repository.js";
 import { AuthTokenService } from "./auth-token.service.js";
 import type {
   AuthAccountRepository,
+  AuthTokenSigner,
   PasswordHasher,
-  RegistrationTokenSigner,
+  RegisteredAccount,
 } from "./auth.types.js";
 import { isPasswordCompliant } from "./password-policy.js";
 import { PasswordHasherService } from "./password-hasher.service.js";
@@ -20,6 +32,11 @@ interface NormalizedRegisterInput {
   readonly phone: string | null;
 }
 
+interface NormalizedLoginInput {
+  readonly email: string;
+  readonly password: string;
+}
+
 @Injectable()
 export class AuthService {
   public constructor(
@@ -28,7 +45,7 @@ export class AuthService {
     @Inject(PasswordHasherService)
     private readonly passwordHasher: PasswordHasher,
     @Inject(AuthTokenService)
-    private readonly tokenSigner: RegistrationTokenSigner,
+    private readonly tokenSigner: AuthTokenSigner,
   ) {}
 
   public async register(request: RegisterRequestDto): Promise<RegisterResponseDto> {
@@ -52,14 +69,31 @@ export class AuthService {
       throw new ConflictException(["Un compte existe déjà avec cet email."]);
     }
 
-    const accessToken = await this.tokenSigner.signRegistrationToken(account);
+    const accessToken = await this.tokenSigner.signAccessToken(account);
 
-    return {
-      accessToken,
-      organization: account.organization,
-      tokenType: "Bearer",
-      user: account.user,
-    };
+    return this.createAuthResponse(account, accessToken);
+  }
+
+  public async login(request: LoginRequestDto): Promise<LoginResponseDto> {
+    const normalizedRequest = this.normalizeLoginRequest(request);
+    const account = await this.authRepository.findAccountByEmail(normalizedRequest.email);
+
+    if (!account) {
+      throw this.createInvalidCredentialsException();
+    }
+
+    const passwordMatches = await this.passwordHasher.verifyPassword(
+      account.passwordHash,
+      normalizedRequest.password,
+    );
+
+    if (!passwordMatches) {
+      throw this.createInvalidCredentialsException();
+    }
+
+    const accessToken = await this.tokenSigner.signAccessToken(account);
+
+    return this.createAuthResponse(account, accessToken);
   }
 
   private normalizeRegisterRequest(request: RegisterRequestDto): NormalizedRegisterInput {
@@ -73,6 +107,13 @@ export class AuthService {
       ),
       password: request.password,
       phone: this.normalizeOptionalText(request.phone),
+    };
+  }
+
+  private normalizeLoginRequest(request: LoginRequestDto): NormalizedLoginInput {
+    return {
+      email: this.normalizeEmail(request.email),
+      password: this.normalizeRequiredText(request.password, "Le mot de passe est obligatoire."),
     };
   }
 
@@ -98,5 +139,18 @@ export class AuthService {
     const normalizedValue = value.trim();
 
     return normalizedValue.length > 0 ? normalizedValue : null;
+  }
+
+  private createAuthResponse(account: RegisteredAccount, accessToken: string): RegisterResponseDto {
+    return {
+      accessToken,
+      organization: account.organization,
+      tokenType: "Bearer",
+      user: account.user,
+    };
+  }
+
+  private createInvalidCredentialsException(): UnauthorizedException {
+    return new UnauthorizedException(["Email ou mot de passe incorrect."]);
   }
 }
