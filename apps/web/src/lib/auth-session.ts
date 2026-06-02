@@ -33,8 +33,20 @@ const authSessionSchema = z.object({
   }),
 });
 
+const accessTokenPayloadSchema = z.object({
+  exp: z.number().int().positive(),
+});
+
 export function saveAuthSession(session: RegisterResponseDto): void {
   window.localStorage.setItem(authSessionStorageKey, JSON.stringify(session));
+}
+
+export function clearAuthSession(): void {
+  if (!canUseBrowserStorage()) {
+    return;
+  }
+
+  window.localStorage.removeItem(authSessionStorageKey);
 }
 
 export function readAuthSession(): RegisterResponseDto | null {
@@ -57,7 +69,32 @@ export function readAuthSession(): RegisterResponseDto | null {
   // Lecture défensive : localStorage peut être modifié hors de l'application.
   const parsedSession = authSessionSchema.safeParse(parsedStorage);
 
-  return parsedSession.success ? parsedSession.data : null;
+  if (!parsedSession.success || isAuthSessionExpired(parsedSession.data)) {
+    clearAuthSession();
+    return null;
+  }
+
+  return parsedSession.data;
+}
+
+export function isAuthSessionExpired(
+  session: RegisterResponseDto,
+  currentTimeMilliseconds = Date.now(),
+): boolean {
+  return getAuthSessionRemainingMilliseconds(session, currentTimeMilliseconds) <= 0;
+}
+
+export function getAuthSessionRemainingMilliseconds(
+  session: RegisterResponseDto,
+  currentTimeMilliseconds = Date.now(),
+): number {
+  const expirationTimeMilliseconds = getAccessTokenExpirationTimeMilliseconds(session.accessToken);
+
+  if (expirationTimeMilliseconds === null) {
+    return 0;
+  }
+
+  return Math.max(expirationTimeMilliseconds - currentTimeMilliseconds, 0);
 }
 
 export function saveOrganizationInAuthSession(
@@ -90,6 +127,38 @@ function canUseBrowserStorage(): boolean {
 function parseJsonValue(serializedValue: string): JsonValue | null {
   try {
     return JSON.parse(serializedValue) as JsonValue;
+  } catch {
+    return null;
+  }
+}
+
+function getAccessTokenExpirationTimeMilliseconds(accessToken: string): number | null {
+  const tokenParts = accessToken.split(".");
+  const encodedPayload = tokenParts[1];
+
+  if (tokenParts.length !== 3 || !encodedPayload) {
+    return null;
+  }
+
+  const serializedPayload = decodeBase64Url(encodedPayload);
+
+  if (!serializedPayload) {
+    return null;
+  }
+
+  const parsedPayload = parseJsonValue(serializedPayload);
+  const payload = accessTokenPayloadSchema.safeParse(parsedPayload);
+
+  return payload.success ? payload.data.exp * 1000 : null;
+}
+
+function decodeBase64Url(encodedValue: string): string | null {
+  const normalizedValue = encodedValue.replaceAll("-", "+").replaceAll("_", "/");
+  const paddingLength = (4 - (normalizedValue.length % 4)) % 4;
+  const paddedValue = `${normalizedValue}${"=".repeat(paddingLength)}`;
+
+  try {
+    return window.atob(paddedValue);
   } catch {
     return null;
   }

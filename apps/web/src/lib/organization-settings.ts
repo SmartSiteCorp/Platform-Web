@@ -16,6 +16,7 @@ export type OrganizationSettingsResult =
   | {
       readonly message: string;
       readonly ok: false;
+      readonly sessionExpired?: true;
     };
 
 export async function loadOrganizationSettings(
@@ -28,14 +29,11 @@ export async function loadOrganizationSettings(
   });
 
   if (response.error) {
-    return {
-      message: getOrganizationErrorMessage(
-        response.error,
-        response.response?.status,
-        "Impossible de charger les informations de l'entreprise.",
-      ),
-      ok: false,
-    };
+    return createOrganizationErrorResult(
+      response.error,
+      response.response?.status,
+      "Impossible de charger les informations de l'entreprise.",
+    );
   }
 
   return { ok: true, organization: response.data };
@@ -54,17 +52,33 @@ export async function updateOrganizationSettings(
   });
 
   if (response.error) {
-    return {
-      message: getOrganizationErrorMessage(
-        response.error,
-        response.response?.status,
-        "Les informations de l'entreprise n'ont pas pu être sauvegardées.",
-      ),
-      ok: false,
-    };
+    return createOrganizationErrorResult(
+      response.error,
+      response.response?.status,
+      "Les informations de l'entreprise n'ont pas pu être sauvegardées.",
+    );
   }
 
   return { ok: true, organization: response.data };
+}
+
+function createOrganizationErrorResult(
+  error: ApiErrorResponseDto,
+  statusCode: number | undefined,
+  fallbackMessage: string,
+): OrganizationSettingsResult {
+  if (statusCode === 401) {
+    return {
+      message: "Votre session a expiré. Connectez-vous à nouveau.",
+      ok: false,
+      sessionExpired: true,
+    };
+  }
+
+  return {
+    message: getOrganizationErrorMessage(error, statusCode, fallbackMessage),
+    ok: false,
+  };
 }
 
 function getOrganizationErrorMessage(

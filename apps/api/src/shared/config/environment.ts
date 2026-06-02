@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { config as loadDotenvFile } from "dotenv";
 
 const defaultApiPort = 4000;
-const defaultJwtAccessExpiresInSeconds = 3600;
+const defaultJwtAccessExpiresInSeconds = 25200;
 const defaultRegisterRateLimitLimit = 5;
 const defaultRegisterRateLimitTtlSeconds = 60;
 const jwtAccessSecretMinLength = 32;

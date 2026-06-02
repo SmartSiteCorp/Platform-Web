@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   OrganizationResponseDto,
@@ -8,11 +8,20 @@ import type {
 } from "@/generated/api";
 import { readAuthSession, saveAuthSession } from "@/lib/auth-session";
 import type { OrganizationSettingsResult } from "@/lib/organization-settings";
+import { createTestAccessToken } from "@/test/create-test-access-token";
 import {
   OrganizationSettingsPage,
   type OrganizationSettingsLoader,
   type OrganizationSettingsSubmitter,
 } from "./organization-settings-page";
+
+const routerMock = vi.hoisted(() => ({
+  replace: vi.fn<(url: string) => void>(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => routerMock,
+}));
 
 interface SubmittedOrganizationUpdate {
   readonly organizationId: string;
@@ -25,7 +34,7 @@ interface RenderReadyPageOptions {
 }
 
 const registeredAccount: RegisterResponseDto = {
-  accessToken: "access-token",
+  accessToken: createTestAccessToken(Math.floor(Date.now() / 1000) + 3600),
   organization: {
     createdAt: "2026-06-01T10:00:00.000Z",
     email: "contact@smartsite.fr",
@@ -67,6 +76,7 @@ const updatedOrganization: OrganizationResponseDto = {
 
 describe("OrganizationSettingsPage", () => {
   beforeEach(() => {
+    routerMock.replace.mockClear();
     window.localStorage.clear();
   });
 
@@ -139,6 +149,20 @@ describe("OrganizationSettingsPage", () => {
 
     expect(await screen.findByText("Session requise")).toBeInTheDocument();
     expect(loadCallCount).toBe(0);
+  });
+
+  it("supprime la session expiree et redirige vers la connexion", async () => {
+    saveAuthSession({
+      ...registeredAccount,
+      accessToken: createTestAccessToken(Math.floor(Date.now() / 1000) - 1),
+    });
+
+    render(<OrganizationSettingsPage />);
+
+    await waitFor(() => {
+      expect(routerMock.replace).toHaveBeenCalledWith("/login");
+    });
+    expect(readAuthSession()).toBeNull();
   });
 });
 
