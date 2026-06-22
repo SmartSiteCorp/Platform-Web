@@ -5,6 +5,10 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 
 import { AppHeader } from "@/components/layout/app-header";
 import {
+  OrganizationInvitationForm,
+  type OrganizationInvitationSubmitter,
+} from "@/components/organization/organization-invitation-form";
+import {
   OrganizationSettingsForm,
   type OrganizationUpdateSubmitter,
 } from "@/components/organization/organization-settings-form";
@@ -26,6 +30,7 @@ import {
   updateOrganizationSettings,
   type OrganizationSettingsResult,
 } from "@/lib/organization-settings";
+import { createOrganizationInvitation } from "@/lib/organization-invitations";
 import { useAuthSessionExpiration } from "@/lib/use-auth-session";
 
 export type OrganizationSettingsLoader = (
@@ -33,6 +38,7 @@ export type OrganizationSettingsLoader = (
 ) => Promise<OrganizationSettingsResult>;
 
 export type OrganizationSettingsSubmitter = typeof updateOrganizationSettings;
+export type OrganizationInvitationCreator = typeof createOrganizationInvitation;
 
 type OrganizationSettingsPageState =
   | { readonly status: "loading-session" }
@@ -51,6 +57,7 @@ type OrganizationSettingsPageState =
 
 interface OrganizationSettingsPageProps {
   readonly loadOrganizationDetails?: OrganizationSettingsLoader;
+  readonly submitOrganizationInvitation?: OrganizationInvitationCreator;
   readonly submitOrganizationSettings?: OrganizationSettingsSubmitter;
 }
 
@@ -64,13 +71,19 @@ interface InitialOrganizationStateOptions {
 
 export function OrganizationSettingsPage({
   loadOrganizationDetails = loadOrganizationSettings,
+  submitOrganizationInvitation = createOrganizationInvitation,
   submitOrganizationSettings = updateOrganizationSettings,
 }: OrganizationSettingsPageProps) {
-  const { pageState, saveOrganizationState, submitCurrentOrganizationUpdate } =
-    useOrganizationSettingsState({
-      loadOrganizationDetails,
-      submitOrganizationSettings,
-    });
+  const {
+    pageState,
+    saveOrganizationState,
+    submitCurrentOrganizationInvitation,
+    submitCurrentOrganizationUpdate,
+  } = useOrganizationSettingsState({
+    loadOrganizationDetails,
+    submitOrganizationInvitation,
+    submitOrganizationSettings,
+  });
 
   return (
     <main className="min-h-screen bg-background">
@@ -80,6 +93,7 @@ export function OrganizationSettingsPage({
         <OrganizationSettingsContent
           onOrganizationSaved={saveOrganizationState}
           pageState={pageState}
+          submitOrganizationInvitation={submitCurrentOrganizationInvitation}
           submitOrganizationUpdate={submitCurrentOrganizationUpdate}
         />
       </section>
@@ -89,6 +103,7 @@ export function OrganizationSettingsPage({
 
 function useOrganizationSettingsState({
   loadOrganizationDetails,
+  submitOrganizationInvitation,
   submitOrganizationSettings,
 }: Required<OrganizationSettingsPageProps>) {
   const router = useRouter();
@@ -133,6 +148,27 @@ function useOrganizationSettingsState({
     });
   };
 
+  const submitCurrentOrganizationInvitation: OrganizationInvitationSubmitter = (
+    organizationId,
+    request,
+  ) => {
+    const currentSession = getSessionFromState(pageState);
+
+    if (!currentSession) {
+      return Promise.resolve({ message: "Session utilisateur introuvable.", ok: false });
+    }
+
+    return submitOrganizationInvitation(currentSession, organizationId, request).then((result) => {
+      if (!result.ok && result.sessionExpired) {
+        clearAuthSession();
+        setPageState({ status: "missing-session" });
+        redirectToLogin();
+      }
+
+      return result;
+    });
+  };
+
   const saveOrganizationState = (organization: OrganizationResponseDto): void => {
     const currentSession = getSessionFromState(pageState);
 
@@ -145,16 +181,23 @@ function useOrganizationSettingsState({
     setPageState({ organization, session: updatedSession, status: "ready" });
   };
 
-  return { pageState, saveOrganizationState, submitCurrentOrganizationUpdate };
+  return {
+    pageState,
+    saveOrganizationState,
+    submitCurrentOrganizationInvitation,
+    submitCurrentOrganizationUpdate,
+  };
 }
 
 function OrganizationSettingsContent({
   onOrganizationSaved,
   pageState,
+  submitOrganizationInvitation,
   submitOrganizationUpdate,
 }: {
   readonly onOrganizationSaved: (organization: OrganizationResponseDto) => void;
   readonly pageState: OrganizationSettingsPageState;
+  readonly submitOrganizationInvitation: OrganizationInvitationSubmitter;
   readonly submitOrganizationUpdate: OrganizationUpdateSubmitter;
 }) {
   if (pageState.status === "missing-session") {
@@ -171,11 +214,17 @@ function OrganizationSettingsContent({
 
   return (
     <div aria-label="Espace responsive paramètres" className="grid gap-6 lg:grid-cols-[1fr_22rem]">
-      <OrganizationSettingsForm
-        onOrganizationSaved={onOrganizationSaved}
-        organization={pageState.organization}
-        submitOrganizationUpdate={submitOrganizationUpdate}
-      />
+      <div className="grid gap-6">
+        <OrganizationSettingsForm
+          onOrganizationSaved={onOrganizationSaved}
+          organization={pageState.organization}
+          submitOrganizationUpdate={submitOrganizationUpdate}
+        />
+        <OrganizationInvitationForm
+          organizationId={pageState.organization.id}
+          submitOrganizationInvitation={submitOrganizationInvitation}
+        />
+      </div>
       <OrganizationSummaryPanel organization={pageState.organization} />
     </div>
   );
