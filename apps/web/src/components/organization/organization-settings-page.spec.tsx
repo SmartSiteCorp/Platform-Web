@@ -1,83 +1,22 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import type {
-  OrganizationResponseDto,
-  RegisterResponseDto,
-  UpdateOrganizationRequestDto,
-} from "@/generated/api";
 import { readAuthSession, saveAuthSession } from "@/lib/auth-session";
-import type { OrganizationSettingsResult } from "@/lib/organization-settings";
 import { createTestAccessToken } from "@/test/create-test-access-token";
 import {
-  OrganizationSettingsPage,
-  type OrganizationSettingsLoader,
-  type OrganizationSettingsSubmitter,
-} from "./organization-settings-page";
-
-const routerMock = vi.hoisted(() => ({
-  replace: vi.fn<(url: string) => void>(),
-}));
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => routerMock,
-}));
-
-interface SubmittedOrganizationUpdate {
-  readonly organizationId: string;
-  readonly request: UpdateOrganizationRequestDto;
-}
-
-interface RenderReadyPageOptions {
-  readonly loadResult?: OrganizationSettingsResult;
-  readonly submitResult?: OrganizationSettingsResult;
-}
-
-const responsiveViewports: readonly [string, number][] = [
-  ["mobile", 390],
-  ["tablette", 768],
-];
-
-const registeredAccount: RegisterResponseDto = {
-  accessToken: createTestAccessToken(Math.floor(Date.now() / 1000) + 3600),
-  organization: {
-    createdAt: "2026-06-01T10:00:00.000Z",
-    email: "contact@smartsite.fr",
-    id: "organization-id",
-    name: "Stern Tech",
-  },
-  tokenType: "Bearer",
-  user: {
-    createdAt: "2026-06-01T10:00:00.000Z",
-    email: "andreea@smartsite.fr",
-    firstName: "Andreea",
-    id: "user-id",
-    lastName: "Rauta",
-    organizationId: "organization-id",
-    phone: null,
-    roles: ["administrateur"],
-    status: "active",
-  },
-};
-
-const organization: OrganizationResponseDto = {
-  address: "12 rue des Chantiers, Paris",
-  createdAt: "2026-06-01T10:00:00.000Z",
-  email: "contact@smartsite.fr",
-  id: "organization-id",
-  name: "Stern Tech",
-  phone: "+33123456789",
-  updatedAt: "2026-06-01T10:00:00.000Z",
-};
-
-const updatedOrganization: OrganizationResponseDto = {
-  ...organization,
-  address: "14 rue du Chantier, Lyon",
-  email: "contact@smartsite.fr",
-  name: "Stern Tech Renovation",
-  phone: null,
-  updatedAt: "2026-06-02T09:00:00.000Z",
-};
+  fillInvitationForm,
+  fillOrganizationForm,
+  expectRouterRedirectTo,
+  getOrganizationSettingsForm,
+  organization,
+  registeredAccount,
+  renderDefaultOrganizationSettingsPage,
+  renderOrganizationSettingsPageWithLoader,
+  renderReadyPage,
+  resetOrganizationSettingsPageTest,
+  responsiveViewports,
+  setViewportWidth,
+} from "./organization-settings-page.test-utils";
 
 describe("OrganizationSettingsPage - affichage", () => {
   beforeEach(() => {
@@ -92,6 +31,9 @@ describe("OrganizationSettingsPage - affichage", () => {
     expect(screen.getByDisplayValue("+33123456789")).toBeInTheDocument();
     expect(screen.getByDisplayValue("12 rue des Chantiers, Paris")).toBeInTheDocument();
     expect(screen.getByText("Aperçu organisation")).toBeInTheDocument();
+    expect(
+      screen.getByRole("form", { name: "Formulaire invitation utilisateur" }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Espace responsive paramètres")).toHaveClass(
       "lg:grid-cols-[1fr_22rem]",
     );
@@ -102,10 +44,12 @@ describe("OrganizationSettingsPage - affichage", () => {
     renderReadyPage();
 
     expect(await screen.findByDisplayValue("Stern Tech")).toBeInTheDocument();
-    expect(screen.getByLabelText("Nom entreprise")).toBeInTheDocument();
-    expect(screen.getByLabelText("Email")).toBeInTheDocument();
-    expect(screen.getByLabelText("Téléphone")).toBeInTheDocument();
-    expect(screen.getByLabelText("Adresse")).toBeInTheDocument();
+    const organizationForm = getOrganizationSettingsForm();
+
+    expect(within(organizationForm).getByLabelText("Nom entreprise")).toBeInTheDocument();
+    expect(within(organizationForm).getByLabelText("Email")).toBeInTheDocument();
+    expect(within(organizationForm).getByLabelText("Téléphone")).toBeInTheDocument();
+    expect(within(organizationForm).getByLabelText("Adresse")).toBeInTheDocument();
     expect(screen.getByText("Aperçu organisation")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enregistrer" })).toBeEnabled();
     expect(screen.getByLabelText("Espace responsive paramètres")).toHaveClass(
@@ -124,7 +68,8 @@ describe("OrganizationSettingsPage - formulaire", () => {
   it("bloque un email invalide avant l'appel API", async () => {
     const { getSubmittedUpdate } = renderReadyPage();
 
-    fireEvent.change(await screen.findByLabelText("Email"), {
+    await screen.findByDisplayValue("Stern Tech");
+    fireEvent.change(within(getOrganizationSettingsForm()).getByLabelText("Email"), {
       target: { value: "email-invalide" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
@@ -167,6 +112,62 @@ describe("OrganizationSettingsPage - formulaire", () => {
   });
 });
 
+describe("OrganizationSettingsPage - invitations", () => {
+  beforeEach(() => {
+    resetOrganizationSettingsPageTest();
+  });
+
+  it("envoie une invitation utilisateur depuis l'organisation courante", async () => {
+    const { getSubmittedInvitation } = renderReadyPage();
+
+    await screen.findByDisplayValue("Stern Tech");
+    fillInvitationForm();
+    fireEvent.click(screen.getByRole("button", { name: "Envoyer l'invitation" }));
+
+    await waitFor(() => {
+      expect(getSubmittedInvitation()).toStrictEqual({
+        organizationId: "organization-id",
+        request: {
+          email: "ouvrier@smartsite.fr",
+          roleCodes: ["ouvrier"],
+        },
+      });
+    });
+    expect(
+      await screen.findByText("Invitation prête pour ouvrier@smartsite.fr."),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Lien d'invitation")).toHaveValue(
+      new URL("/invitations/accept?token=invitation-token", window.location.origin).toString(),
+    );
+  });
+
+  it("redirige vers la connexion si la session expire pendant l'invitation", async () => {
+    const { getSubmittedInvitation } = renderReadyPage({
+      submitInvitationResult: {
+        message: "Votre session a expiré. Connectez-vous à nouveau.",
+        ok: false,
+        sessionExpired: true,
+      },
+    });
+
+    await screen.findByDisplayValue("Stern Tech");
+    fillInvitationForm();
+    fireEvent.click(screen.getByRole("button", { name: "Envoyer l'invitation" }));
+
+    await waitFor(() => {
+      expectRouterRedirectTo("/login");
+    });
+    expect(getSubmittedInvitation()).toStrictEqual({
+      organizationId: "organization-id",
+      request: {
+        email: "ouvrier@smartsite.fr",
+        roleCodes: ["ouvrier"],
+      },
+    });
+    expect(readAuthSession()).toBeNull();
+  });
+});
+
 describe("OrganizationSettingsPage - session", () => {
   beforeEach(() => {
     resetOrganizationSettingsPageTest();
@@ -174,12 +175,12 @@ describe("OrganizationSettingsPage - session", () => {
 
   it("affiche un acces bloque si la session est absente", async () => {
     let loadCallCount = 0;
-    const loadOrganizationDetails: OrganizationSettingsLoader = () => {
+    const loadOrganizationDetails = () => {
       loadCallCount += 1;
-      return Promise.resolve({ ok: true, organization });
+      return Promise.resolve({ ok: true as const, organization });
     };
 
-    render(<OrganizationSettingsPage loadOrganizationDetails={loadOrganizationDetails} />);
+    renderOrganizationSettingsPageWithLoader(loadOrganizationDetails);
 
     expect(await screen.findByText("Session requise")).toBeInTheDocument();
     expect(loadCallCount).toBe(0);
@@ -191,70 +192,11 @@ describe("OrganizationSettingsPage - session", () => {
       accessToken: createTestAccessToken(Math.floor(Date.now() / 1000) - 1),
     });
 
-    render(<OrganizationSettingsPage />);
+    renderDefaultOrganizationSettingsPage();
 
     await waitFor(() => {
-      expect(routerMock.replace).toHaveBeenCalledWith("/login");
+      expectRouterRedirectTo("/login");
     });
     expect(readAuthSession()).toBeNull();
   });
 });
-
-function resetOrganizationSettingsPageTest(): void {
-  routerMock.replace.mockClear();
-  setViewportWidth(1280);
-  window.localStorage.clear();
-}
-
-function renderReadyPage({
-  loadResult = { ok: true, organization },
-  submitResult = { ok: true, organization: updatedOrganization },
-}: RenderReadyPageOptions = {}): {
-  readonly getSubmittedUpdate: () => SubmittedOrganizationUpdate | null;
-} {
-  let submittedUpdate: SubmittedOrganizationUpdate | null = null;
-  saveAuthSession(registeredAccount);
-
-  const loadOrganizationDetails: OrganizationSettingsLoader = () => Promise.resolve(loadResult);
-  const submitOrganizationSettings: OrganizationSettingsSubmitter = (
-    _session,
-    organizationId,
-    request,
-  ) => {
-    submittedUpdate = { organizationId, request };
-    return Promise.resolve(submitResult);
-  };
-
-  render(
-    <OrganizationSettingsPage
-      loadOrganizationDetails={loadOrganizationDetails}
-      submitOrganizationSettings={submitOrganizationSettings}
-    />,
-  );
-
-  return {
-    getSubmittedUpdate: () => submittedUpdate,
-  };
-}
-
-function fillOrganizationForm(): void {
-  fireEvent.change(screen.getByLabelText("Nom entreprise"), {
-    target: { value: " Stern Tech Renovation " },
-  });
-  fireEvent.change(screen.getByLabelText("Email"), {
-    target: { value: " CONTACT@SMARTSITE.FR " },
-  });
-  fireEvent.change(screen.getByLabelText("Téléphone"), { target: { value: " " } });
-  fireEvent.change(screen.getByLabelText("Adresse"), {
-    target: { value: " 14 rue du Chantier, Lyon " },
-  });
-}
-
-function setViewportWidth(width: number): void {
-  Object.defineProperty(window, "innerWidth", {
-    configurable: true,
-    value: width,
-    writable: true,
-  });
-  window.dispatchEvent(new Event("resize"));
-}

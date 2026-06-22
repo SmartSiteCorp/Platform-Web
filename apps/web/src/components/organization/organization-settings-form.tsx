@@ -1,19 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AlertCircle,
-  Building2,
-  CheckCircle,
-  Loader2,
-  Mail,
-  MapPin,
-  Phone,
-  Save,
-} from "lucide-react";
+import { Building2, Loader2, Mail, MapPin, Phone, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm, type FieldErrors, type UseFormRegister } from "react-hook-form";
 
+import { OrganizationFormStatusMessage } from "@/components/organization/organization-form-status-message";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TextField } from "@/components/ui/text-field";
@@ -85,9 +77,14 @@ export function OrganizationSettingsForm({
         <CardTitle>Informations entreprise</CardTitle>
       </CardHeader>
       <CardContent>
-        <form className="space-y-5" noValidate onSubmit={(event) => void submitForm(event)}>
-          <FormStatusMessage message={apiError} tone="error" />
-          <FormStatusMessage message={confirmationMessage} tone="success" />
+        <form
+          aria-label="Formulaire informations entreprise"
+          className="space-y-5"
+          noValidate
+          onSubmit={(event) => void submitForm(event)}
+        >
+          <OrganizationFormStatusMessage message={apiError} tone="error" />
+          <OrganizationFormStatusMessage message={confirmationMessage} tone="success" />
           <OrganizationSettingsFields errors={errors} register={register} />
           <Button className="w-full sm:w-auto" disabled={isSubmitting} type="submit">
             {isSubmitting ? (
@@ -147,34 +144,6 @@ function OrganizationSettingsFields({ errors, register }: OrganizationSettingsFi
         type="text"
         {...register("address")}
       />
-    </div>
-  );
-}
-
-function FormStatusMessage({
-  message,
-  tone,
-}: {
-  readonly message: string | null;
-  readonly tone: "error" | "success";
-}) {
-  if (!message) {
-    return null;
-  }
-
-  const Icon = tone === "error" ? AlertCircle : CheckCircle;
-  const toneClasses =
-    tone === "error"
-      ? "border-destructive/30 bg-destructive/10 text-destructive"
-      : "border-success/40 bg-success/20 text-success-foreground";
-
-  return (
-    <div
-      className={`flex items-start gap-3 rounded-md border p-3 text-sm ${toneClasses}`}
-      role="alert"
-    >
-      <Icon aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-      <span>{message}</span>
     </div>
   );
 }
