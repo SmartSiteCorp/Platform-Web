@@ -5,15 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --port 3000",
+    "predev": "npm run build -w @smartsite/shared",
     "build": "next build",
+    "prebuild": "npm run build -w @smartsite/shared",
     "start": "next start --port 3000",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretypecheck": "npm run build -w @smartsite/shared",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
+    "pretest": "npm run build -w @smartsite/shared",
     "test:watch": "vitest",
     "openapi:generate": "openapi-ts && node scripts/mark-generated-typecheck-exempt.mjs"
   },
   "dependencies": {
+    "@smartsite/shared": "0.1.0",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-dialog": "^1.1.0",
     "@radix-ui/react-label": "^2.1.0",

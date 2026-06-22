@@ -1,3 +1,7 @@
+import {
+  areOrganizationRoleCodesCompatible,
+  organizationRoleCompatibilityErrorMessage,
+} from "@smartsite/shared";
 import { z } from "zod";
 
 import type { CreateOrganizationInvitationRequestDto } from "@/generated/api";
@@ -45,7 +49,10 @@ export const organizationInvitationFormSchema = z.object({
   roleCodes: z
     .array(z.enum(inviteableOrganizationRoleCodeValues))
     .min(1, "Sélectionnez au moins un rôle.")
-    .max(4, "Trop de rôles sélectionnés."),
+    .max(4, "Trop de rôles sélectionnés.")
+    .refine((roleCodes) => areOrganizationRoleCodesCompatible(roleCodes), {
+      message: organizationRoleCompatibilityErrorMessage,
+    }),
 });
 
 export type OrganizationInvitationFormValues = z.infer<typeof organizationInvitationFormSchema>;
@@ -69,4 +76,15 @@ export function getInviteableRoleLabel(roleCode: string): string {
     inviteableOrganizationRoleOptions.find((roleOption) => roleOption.code === roleCode)?.label ??
     roleCode
   );
+}
+
+export function isInviteableOrganizationRoleDisabled(
+  selectedRoleCodes: readonly InviteableOrganizationRoleCode[],
+  roleCode: InviteableOrganizationRoleCode,
+): boolean {
+  if (selectedRoleCodes.includes(roleCode)) {
+    return false;
+  }
+
+  return !areOrganizationRoleCodesCompatible([...selectedRoleCodes, roleCode]);
 }

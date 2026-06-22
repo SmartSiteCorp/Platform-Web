@@ -59,7 +59,7 @@ it("creates a secure organization invitation with selected roles", async () => {
 
   const responseBody = await createInvitation(getHttpServer(), account, {
     email: invitedEmail.toUpperCase(),
-    roleCodes: ["ouvrier", "droniste"],
+    roleCodes: ["chef_chantier", "droniste"],
   });
   const invitation = await findInvitation(databaseService, responseBody.id);
 
@@ -67,16 +67,33 @@ it("creates a secure organization invitation with selected roles", async () => {
     email: invitedEmail,
     organizationId: account.response.organization.id,
   });
-  expect(responseBody.roleCodes).toStrictEqual(["droniste", "ouvrier"]);
+  expect(responseBody.roleCodes).toStrictEqual(["chef_chantier", "droniste"]);
   expect(responseBody.token.length).toBeGreaterThan(20);
   expect(invitation).toStrictEqual({
     accepted_at: null,
     accepted_by: null,
     email: invitedEmail,
-    role_codes: ["droniste", "ouvrier"],
+    role_codes: ["chef_chantier", "droniste"],
     token_hash: hashInvitationToken(responseBody.token),
   });
   expect(invitation.token_hash).not.toBe(responseBody.token);
+});
+
+it("rejects incompatible invitation role combinations", async () => {
+  const account = await createRegisteredAccount();
+
+  const response = await request(getHttpServer())
+    .post(`/api/organizations/${account.response.organization.id}/invitations`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({
+      email: createInvitationEmail(),
+      roleCodes: ["ouvrier", "droniste"],
+    })
+    .expect(400);
+
+  expect(parseApiErrorResponse(response).message).toContain(
+    "Cette combinaison de rôles n'est pas autorisée.",
+  );
 });
 
 it("rejects invitation creation without authentication", async () => {
