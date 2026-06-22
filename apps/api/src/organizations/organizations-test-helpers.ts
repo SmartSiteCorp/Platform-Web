@@ -46,7 +46,7 @@ export function createRegisterRequest(): RegisterPayload {
     firstName: "Andreea",
     lastName: "Rauta",
     organizationName: "Stern Tech",
-    password: "Test123@",
+    password: "Test1234567@.",
   };
 }
 
