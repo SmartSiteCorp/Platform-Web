@@ -41,7 +41,7 @@ import { PasswordHasherService } from "./password-hasher.service.js";
       ],
     }),
   ],
-  exports: [JwtAuthGuard, JwtModule],
+  exports: [AuthTokenService, JwtAuthGuard, JwtModule, PasswordHasherService],
   providers: [AuthRepository, AuthService, AuthTokenService, JwtAuthGuard, PasswordHasherService],
 })
 export class AuthModule {}

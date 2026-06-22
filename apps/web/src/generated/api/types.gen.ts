@@ -81,6 +81,37 @@ export type UpdateOrganizationRequestDto = {
     address?: string | null;
 };
 
+export type CreateOrganizationInvitationRequestDto = {
+    email: string;
+    roleCodes: Array<string>;
+};
+
+export type OrganizationInvitationResponseDto = {
+    id: string;
+    organizationId: string;
+    email: string;
+    roleCodes: Array<string>;
+    token: string;
+    expiresAt: string;
+    createdAt: string;
+};
+
+export type AcceptOrganizationInvitationRequestDto = {
+    token: string;
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+};
+
+export type AcceptOrganizationInvitationResponseDto = {
+    user: RegisteredUserDto;
+    organization: RegisteredOrganizationDto;
+    tokenType: string;
+    accessToken: string;
+};
+
 export type AuthControllerRegisterData = {
     body: RegisterRequestDto;
     path?: never;
@@ -217,3 +248,69 @@ export type OrganizationsControllerUpdateOrganizationResponses = {
 };
 
 export type OrganizationsControllerUpdateOrganizationResponse = OrganizationsControllerUpdateOrganizationResponses[keyof OrganizationsControllerUpdateOrganizationResponses];
+
+export type OrganizationInvitationsControllerCreateInvitationData = {
+    body: CreateOrganizationInvitationRequestDto;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{id}/invitations';
+};
+
+export type OrganizationInvitationsControllerCreateInvitationErrors = {
+    /**
+     * Invitation invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Accès organisation interdit.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Invitation impossible.
+     */
+    409: ApiErrorResponseDto;
+};
+
+export type OrganizationInvitationsControllerCreateInvitationError = OrganizationInvitationsControllerCreateInvitationErrors[keyof OrganizationInvitationsControllerCreateInvitationErrors];
+
+export type OrganizationInvitationsControllerCreateInvitationResponses = {
+    201: OrganizationInvitationResponseDto;
+};
+
+export type OrganizationInvitationsControllerCreateInvitationResponse = OrganizationInvitationsControllerCreateInvitationResponses[keyof OrganizationInvitationsControllerCreateInvitationResponses];
+
+export type OrganizationInvitationsControllerAcceptInvitationData = {
+    body: AcceptOrganizationInvitationRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/organizations/invitations/accept';
+};
+
+export type OrganizationInvitationsControllerAcceptInvitationErrors = {
+    /**
+     * Acceptation d'invitation invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Invitation invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Acceptation d'invitation impossible.
+     */
+    409: ApiErrorResponseDto;
+};
+
+export type OrganizationInvitationsControllerAcceptInvitationError = OrganizationInvitationsControllerAcceptInvitationErrors[keyof OrganizationInvitationsControllerAcceptInvitationErrors];
+
+export type OrganizationInvitationsControllerAcceptInvitationResponses = {
+    201: AcceptOrganizationInvitationResponseDto;
+};
+
+export type OrganizationInvitationsControllerAcceptInvitationResponse = OrganizationInvitationsControllerAcceptInvitationResponses[keyof OrganizationInvitationsControllerAcceptInvitationResponses];
