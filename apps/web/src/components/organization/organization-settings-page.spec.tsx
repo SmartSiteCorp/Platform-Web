@@ -33,6 +33,11 @@ interface RenderReadyPageOptions {
   readonly submitResult?: OrganizationSettingsResult;
 }
 
+const responsiveViewports: readonly [string, number][] = [
+  ["mobile", 390],
+  ["tablette", 768],
+];
+
 const registeredAccount: RegisterResponseDto = {
   accessToken: createTestAccessToken(Math.floor(Date.now() / 1000) + 3600),
   organization: {
@@ -74,10 +79,9 @@ const updatedOrganization: OrganizationResponseDto = {
   updatedAt: "2026-06-02T09:00:00.000Z",
 };
 
-describe("OrganizationSettingsPage", () => {
+describe("OrganizationSettingsPage - affichage", () => {
   beforeEach(() => {
-    routerMock.replace.mockClear();
-    window.localStorage.clear();
+    resetOrganizationSettingsPageTest();
   });
 
   it("affiche les donnees actuelles de l'entreprise", async () => {
@@ -91,6 +95,30 @@ describe("OrganizationSettingsPage", () => {
     expect(screen.getByLabelText("Espace responsive paramètres")).toHaveClass(
       "lg:grid-cols-[1fr_22rem]",
     );
+  });
+
+  it.each(responsiveViewports)("garde la page utilisable en %s", async (_label, width) => {
+    setViewportWidth(width);
+    renderReadyPage();
+
+    expect(await screen.findByDisplayValue("Stern Tech")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nom entreprise")).toBeInTheDocument();
+    expect(screen.getByLabelText("Email")).toBeInTheDocument();
+    expect(screen.getByLabelText("Téléphone")).toBeInTheDocument();
+    expect(screen.getByLabelText("Adresse")).toBeInTheDocument();
+    expect(screen.getByText("Aperçu organisation")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeEnabled();
+    expect(screen.getByLabelText("Espace responsive paramètres")).toHaveClass(
+      "grid",
+      "gap-6",
+      "lg:grid-cols-[1fr_22rem]",
+    );
+  });
+});
+
+describe("OrganizationSettingsPage - formulaire", () => {
+  beforeEach(() => {
+    resetOrganizationSettingsPageTest();
   });
 
   it("bloque un email invalide avant l'appel API", async () => {
@@ -137,6 +165,12 @@ describe("OrganizationSettingsPage", () => {
 
     expect(await screen.findByText("Accès organisation interdit.")).toBeInTheDocument();
   });
+});
+
+describe("OrganizationSettingsPage - session", () => {
+  beforeEach(() => {
+    resetOrganizationSettingsPageTest();
+  });
 
   it("affiche un acces bloque si la session est absente", async () => {
     let loadCallCount = 0;
@@ -165,6 +199,12 @@ describe("OrganizationSettingsPage", () => {
     expect(readAuthSession()).toBeNull();
   });
 });
+
+function resetOrganizationSettingsPageTest(): void {
+  routerMock.replace.mockClear();
+  setViewportWidth(1280);
+  window.localStorage.clear();
+}
 
 function renderReadyPage({
   loadResult = { ok: true, organization },
@@ -208,4 +248,13 @@ function fillOrganizationForm(): void {
   fireEvent.change(screen.getByLabelText("Adresse"), {
     target: { value: " 14 rue du Chantier, Lyon " },
   });
+}
+
+function setViewportWidth(width: number): void {
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    value: width,
+    writable: true,
+  });
+  window.dispatchEvent(new Event("resize"));
 }
