@@ -19,6 +19,15 @@ describe("DashboardShell route protection and logout recette", () => {
     window.localStorage.clear();
   });
 
+  it("affiche le dashboard quand la session est valide", async () => {
+    saveAuthSession(createAuthSessionFixture());
+
+    render(<DashboardShell />);
+
+    expect(await screen.findByText("Tableau de bord SmartSite")).toBeInTheDocument();
+    expect(routerMock.replace).not.toHaveBeenCalled();
+  });
+
   it("redirige vers la connexion quand aucune session n'existe", async () => {
     render(<DashboardShell />);
 
