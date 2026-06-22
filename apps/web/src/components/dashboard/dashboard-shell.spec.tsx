@@ -1,9 +1,9 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { readAuthSession, saveAuthSession } from "@/lib/auth-session";
 import { createAuthSessionFixture } from "@/test/auth-session-fixture";
-import { AppHeader } from "./app-header";
+import { DashboardShell } from "./dashboard-shell";
 
 const routerMock = vi.hoisted(() => ({
   replace: vi.fn<(url: string) => void>(),
@@ -13,30 +13,32 @@ vi.mock("next/navigation", () => ({
   useRouter: () => routerMock,
 }));
 
-describe("AppHeader", () => {
+describe("DashboardShell logout recette", () => {
   beforeEach(() => {
     routerMock.replace.mockClear();
     window.localStorage.clear();
   });
 
-  it("clears the auth session and redirects to login on logout", () => {
+  it("removes the session and blocks a new dashboard access after logout", async () => {
     saveAuthSession(createAuthSessionFixture());
 
-    render(<AppHeader activeItem="dashboard" />);
+    const { unmount } = render(<DashboardShell />);
+
+    expect(await screen.findByText("Tableau de bord SmartSite")).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button", { name: "Se déconnecter" }));
 
     expect(readAuthSession()).toBeNull();
     expect(routerMock.replace).toHaveBeenCalledWith("/login");
-  });
 
-  it("keeps the main navigation available", () => {
-    render(<AppHeader activeItem="organization-settings" />);
+    unmount();
+    routerMock.replace.mockClear();
 
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/dashboard");
-    expect(screen.getByRole("link", { name: "Paramètres" })).toHaveAttribute(
-      "href",
-      "/settings/organization",
-    );
-    expect(screen.getByRole("button", { name: "Se déconnecter" })).toBeInTheDocument();
+    render(<DashboardShell />);
+
+    await waitFor(() => {
+      expect(routerMock.replace).toHaveBeenCalledWith("/login");
+    });
+    expect(screen.queryByText("Tableau de bord SmartSite")).not.toBeInTheDocument();
   });
 });
