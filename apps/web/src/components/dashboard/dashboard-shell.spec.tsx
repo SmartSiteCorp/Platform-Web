@@ -13,10 +13,35 @@ vi.mock("next/navigation", () => ({
   useRouter: () => routerMock,
 }));
 
-describe("DashboardShell logout recette", () => {
+describe("DashboardShell route protection and logout recette", () => {
   beforeEach(() => {
     routerMock.replace.mockClear();
     window.localStorage.clear();
+  });
+
+  it("redirige vers la connexion quand aucune session n'existe", async () => {
+    render(<DashboardShell />);
+
+    await waitFor(() => {
+      expect(routerMock.replace).toHaveBeenCalledWith("/login");
+    });
+    expect(screen.queryByText("Tableau de bord SmartSite")).not.toBeInTheDocument();
+  });
+
+  it("supprime une session expiree avant d'afficher le dashboard", async () => {
+    saveAuthSession(
+      createAuthSessionFixture({
+        expiresAtSeconds: Math.floor(Date.now() / 1000) - 1,
+      }),
+    );
+
+    render(<DashboardShell />);
+
+    await waitFor(() => {
+      expect(routerMock.replace).toHaveBeenCalledWith("/login");
+    });
+    expect(readAuthSession()).toBeNull();
+    expect(screen.queryByText("Tableau de bord SmartSite")).not.toBeInTheDocument();
   });
 
   it("removes the session and blocks a new dashboard access after logout", async () => {
