@@ -2,8 +2,9 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { LoginRequestDto, LoginResponseDto } from "@/generated/api";
-import { getAuthSessionStorageKey } from "@/lib/auth-session";
+import { getAuthSessionStorageKey, readAuthSession } from "@/lib/auth-session";
 import type { LoginAccountResult } from "@/lib/login-account";
+import { createTestAccessToken } from "@/test/create-test-access-token";
 import { LoginPage } from "./login-page";
 
 const routerMock = vi.hoisted(() => ({
@@ -24,28 +25,6 @@ vi.mock("@/lib/login-account", () => ({
   loginAccount: loginMock.loginAccount,
 }));
 
-const loggedAccount: LoginResponseDto = {
-  accessToken: "access-token",
-  organization: {
-    createdAt: "2026-06-01T10:00:00.000Z",
-    email: "andreea@smartsite.fr",
-    id: "organization-id",
-    name: "Stern Tech",
-  },
-  tokenType: "Bearer",
-  user: {
-    createdAt: "2026-06-01T10:00:00.000Z",
-    email: "andreea@smartsite.fr",
-    firstName: "Andreea",
-    id: "user-id",
-    lastName: "Rauta",
-    organizationId: "organization-id",
-    phone: null,
-    roles: ["administrateur"],
-    status: "active",
-  },
-};
-
 describe("LoginPage", () => {
   beforeEach(() => {
     routerMock.push.mockClear();
@@ -54,6 +33,8 @@ describe("LoginPage", () => {
   });
 
   it("stores the auth session and redirects to the dashboard after login", async () => {
+    const loggedAccount = createLoggedAccount();
+
     loginMock.loginAccount.mockResolvedValue({
       account: loggedAccount,
       ok: true,
@@ -69,13 +50,34 @@ describe("LoginPage", () => {
     expect(window.localStorage.getItem(getAuthSessionStorageKey())).toBe(
       JSON.stringify(loggedAccount),
     );
+    expect(readAuthSession()).toEqual(loggedAccount);
     expect(loginMock.loginAccount).toHaveBeenCalledWith({
       email: "andreea@smartsite.fr",
       password: "SmartSite.2026",
     });
   });
 
+  it("keeps the user on login when credentials are rejected", async () => {
+    const rejectedMessage = "Email ou mot de passe incorrect.";
+
+    loginMock.loginAccount.mockResolvedValue({
+      message: rejectedMessage,
+      ok: false,
+    });
+
+    render(<LoginPage />);
+    fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: "Se connecter" }));
+
+    expect(await screen.findByText(rejectedMessage)).toBeInTheDocument();
+    expect(routerMock.push).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem(getAuthSessionStorageKey())).toBeNull();
+    expect(readAuthSession()).toBeNull();
+  });
+
   it("keeps mobile and desktop responsive sections available", () => {
+    const loggedAccount = createLoggedAccount();
+
     loginMock.loginAccount.mockResolvedValue({
       account: loggedAccount,
       ok: true,
@@ -88,6 +90,30 @@ describe("LoginPage", () => {
     expect(screen.getByText("Connexion sécurisée")).toBeInTheDocument();
   });
 });
+
+function createLoggedAccount(): LoginResponseDto {
+  return {
+    accessToken: createTestAccessToken(Math.floor(Date.now() / 1000) + 3600),
+    organization: {
+      createdAt: "2026-06-01T10:00:00.000Z",
+      email: "andreea@smartsite.fr",
+      id: "organization-id",
+      name: "Stern Tech",
+    },
+    tokenType: "Bearer",
+    user: {
+      createdAt: "2026-06-01T10:00:00.000Z",
+      email: "andreea@smartsite.fr",
+      firstName: "Andreea",
+      id: "user-id",
+      lastName: "Rauta",
+      organizationId: "organization-id",
+      phone: null,
+      roles: ["administrateur"],
+      status: "active",
+    },
+  };
+}
 
 function fillValidForm(): void {
   fireEvent.change(screen.getByLabelText("Email"), {
