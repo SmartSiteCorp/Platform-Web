@@ -137,6 +137,18 @@ it("rejects organization access without JWT", async () => {
     .expect(401);
 });
 
+it("rejects organization updates without JWT", async () => {
+  const account = await createRegisteredAccount();
+
+  await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}`)
+    .send({
+      email: "contact@smartsite.fr",
+      name: "Stern Tech",
+    })
+    .expect(401);
+});
+
 it("rejects organization access with an expired JWT", async () => {
   const account = await createRegisteredAccount();
   const expiredAccessToken = await signExpiredAccessToken(account.response);
@@ -157,6 +169,20 @@ it("rejects access to another organization", async () => {
   await request(getHttpServer())
     .get(`/api/organizations/${secondAccount.response.organization.id}`)
     .set("Authorization", `Bearer ${firstAccount.response.accessToken}`)
+    .expect(403);
+});
+
+it("rejects updates to another organization", async () => {
+  const firstAccount = await createRegisteredAccount();
+  const secondAccount = await createRegisteredAccount();
+
+  await request(getHttpServer())
+    .put(`/api/organizations/${secondAccount.response.organization.id}`)
+    .set("Authorization", `Bearer ${firstAccount.response.accessToken}`)
+    .send({
+      email: "contact@smartsite.fr",
+      name: "Stern Tech",
+    })
     .expect(403);
 });
 
@@ -190,6 +216,27 @@ it("rejects invalid organization payloads", async () => {
 
   expect(responseBody.message).toContain("Le nom d'entreprise est obligatoire.");
   expect(responseBody.message).toContain("L'email doit être valide.");
+});
+
+it("rejects organization payloads above maximum lengths", async () => {
+  const account = await createRegisteredAccount();
+
+  const response = await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({
+      address: "A".repeat(501),
+      email: `${"a".repeat(309)}@example.com`,
+      name: "A".repeat(181),
+      phone: "1".repeat(41),
+    })
+    .expect(400);
+  const responseBody = parseApiErrorResponse(response);
+
+  expect(responseBody.message).toContain("Le nom d'entreprise est trop long.");
+  expect(responseBody.message).toContain("L'email est trop long.");
+  expect(responseBody.message).toContain("Le téléphone est trop long.");
+  expect(responseBody.message).toContain("L'adresse est trop longue.");
 });
 
 function getHttpServer(): Server {
