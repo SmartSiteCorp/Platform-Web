@@ -5,6 +5,10 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import {
+  areOrganizationRoleCodesCompatible,
+  organizationRoleCompatibilityErrorMessage,
+} from "@smartsite/shared";
 
 import { AuthTokenService } from "../auth/auth-token.service.js";
 import type { AccessTokenPayload, AuthTokenSigner, PasswordHasher } from "../auth/auth.types.js";
@@ -156,6 +160,10 @@ export class OrganizationInvitationsService {
 
     if (roleCodes.some((roleCode) => !assignableInvitationRoleCodes.has(roleCode))) {
       throw new BadRequestException(["Un ou plusieurs rôles sont invalides."]);
+    }
+
+    if (!areOrganizationRoleCodesCompatible(roleCodes)) {
+      throw new BadRequestException([organizationRoleCompatibilityErrorMessage]);
     }
 
     return {

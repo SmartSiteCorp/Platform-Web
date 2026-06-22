@@ -36,7 +36,7 @@ export class CreateOrganizationInvitationRequestDto {
   public readonly email!: string;
 
   @ApiProperty({
-    example: ["ouvrier", "droniste"],
+    example: ["chef_chantier", "droniste"],
     isArray: true,
     maxItems: invitationMaxRoleCount,
     type: String,
@@ -64,7 +64,7 @@ export class OrganizationInvitationResponseDto {
   @ApiProperty({ example: "ouvrier@smartsite.test", type: String })
   public readonly email!: string;
 
-  @ApiProperty({ example: ["ouvrier", "droniste"], isArray: true, type: String })
+  @ApiProperty({ example: ["chef_chantier", "droniste"], isArray: true, type: String })
   public readonly roleCodes!: readonly string[];
 
   @ApiProperty({ example: "z6gnxEaqnGd4eBLQp4FBCgva3NS0c8LEpALYp7vo-1w", type: String })

@@ -20,8 +20,10 @@ import { cn } from "@/lib/utils";
 import {
   buildCreateOrganizationInvitationRequest,
   inviteableOrganizationRoleOptions,
+  isInviteableOrganizationRoleDisabled,
   organizationInvitationFormDefaultValues,
   organizationInvitationFormSchema,
+  type InviteableOrganizationRoleCode,
   type InviteableOrganizationRoleOption,
   type OrganizationInvitationFormValues,
 } from "./organization-invitation-form.schema";
@@ -62,7 +64,11 @@ export function OrganizationInvitationForm({
             message={invitationForm.confirmationMessage}
             tone="success"
           />
-          <InvitationFields errors={invitationForm.errors} register={invitationForm.register} />
+          <InvitationFields
+            errors={invitationForm.errors}
+            register={invitationForm.register}
+            selectedRoleCodes={invitationForm.selectedRoleCodes}
+          />
           <Button className="w-full sm:w-auto" disabled={invitationForm.isSubmitting} type="submit">
             {invitationForm.isSubmitting ? (
               <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
@@ -91,6 +97,7 @@ interface OrganizationInvitationFormState {
   readonly errors: FieldErrors<OrganizationInvitationFormValues>;
   readonly isSubmitting: boolean;
   readonly register: UseFormRegister<OrganizationInvitationFormValues>;
+  readonly selectedRoleCodes: readonly InviteableOrganizationRoleCode[];
   readonly submitForm: (event?: BaseSyntheticEvent) => Promise<void>;
 }
 
@@ -108,11 +115,13 @@ function useOrganizationInvitationFormState(
     handleSubmit,
     register,
     reset,
+    watch,
   } = useForm<OrganizationInvitationFormValues>({
     defaultValues: organizationInvitationFormDefaultValues,
     mode: "onTouched",
     resolver: zodResolver(organizationInvitationFormSchema),
   });
+  const selectedRoleCodes = watch("roleCodes");
 
   const submitValidForm = async (values: OrganizationInvitationFormValues): Promise<void> => {
     setApiError(null);
@@ -158,6 +167,7 @@ function useOrganizationInvitationFormState(
     errors,
     isSubmitting,
     register,
+    selectedRoleCodes,
     submitForm,
   };
 }
@@ -165,9 +175,10 @@ function useOrganizationInvitationFormState(
 interface InvitationFieldsProps {
   readonly errors: FieldErrors<OrganizationInvitationFormValues>;
   readonly register: UseFormRegister<OrganizationInvitationFormValues>;
+  readonly selectedRoleCodes: readonly InviteableOrganizationRoleCode[];
 }
 
-function InvitationFields({ errors, register }: InvitationFieldsProps) {
+function InvitationFields({ errors, register, selectedRoleCodes }: InvitationFieldsProps) {
   return (
     <>
       <TextField
@@ -179,12 +190,16 @@ function InvitationFields({ errors, register }: InvitationFieldsProps) {
         type="email"
         {...register("email")}
       />
-      <RoleSelectionField errors={errors} register={register} />
+      <RoleSelectionField
+        errors={errors}
+        register={register}
+        selectedRoleCodes={selectedRoleCodes}
+      />
     </>
   );
 }
 
-function RoleSelectionField({ errors, register }: InvitationFieldsProps) {
+function RoleSelectionField({ errors, register, selectedRoleCodes }: InvitationFieldsProps) {
   const roleCodesRegistration = register("roleCodes");
 
   return (
@@ -200,6 +215,7 @@ function RoleSelectionField({ errors, register }: InvitationFieldsProps) {
             key={roleOption.code}
             roleOption={roleOption}
             roleRegistration={roleCodesRegistration}
+            selectedRoleCodes={selectedRoleCodes}
           />
         ))}
       </div>
@@ -215,21 +231,27 @@ function RoleSelectionField({ errors, register }: InvitationFieldsProps) {
 function InvitationRoleOption({
   roleOption,
   roleRegistration,
+  selectedRoleCodes,
 }: {
   readonly roleOption: InviteableOrganizationRoleOption;
   readonly roleRegistration: ReturnType<UseFormRegister<OrganizationInvitationFormValues>>;
+  readonly selectedRoleCodes: readonly InviteableOrganizationRoleCode[];
 }) {
+  const isDisabled = isInviteableOrganizationRoleDisabled(selectedRoleCodes, roleOption.code);
+
   return (
     <label
       className={cn(
         "flex min-h-24 cursor-pointer gap-3 rounded-md border border-border bg-background p-4",
         "transition-colors hover:border-primary/60 hover:bg-muted",
+        isDisabled && "cursor-not-allowed opacity-55 hover:border-border hover:bg-background",
       )}
       htmlFor={`invitation-role-${roleOption.code}`}
     >
       <input
         className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-ring/25"
         id={`invitation-role-${roleOption.code}`}
+        disabled={isDisabled}
         type="checkbox"
         value={roleOption.code}
         {...roleRegistration}

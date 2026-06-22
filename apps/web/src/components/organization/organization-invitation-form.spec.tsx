@@ -20,7 +20,7 @@ const createdInvitation: OrganizationInvitationResponseDto = {
   token: "invitation-token",
 };
 
-describe("OrganizationInvitationForm", () => {
+describe("OrganizationInvitationForm - affichage et validation", () => {
   it("affiche le champ email et la selection des roles", () => {
     renderInvitationForm(createSuccessfulInvitationSubmitter());
 
@@ -53,6 +53,39 @@ describe("OrganizationInvitationForm", () => {
     expect(submitCount).toBe(0);
   });
 
+  it("desactive les roles incompatibles avec la selection courante", async () => {
+    renderInvitationForm(createSuccessfulInvitationSubmitter());
+
+    const workerRole = screen.getByRole("checkbox", { name: /Ouvrier/ });
+    const foremanRole = screen.getByRole("checkbox", { name: /Chef de chantier/ });
+    const architectRole = screen.getByRole("checkbox", { name: /Architecte/ });
+    const droneOperatorRole = screen.getByRole("checkbox", { name: /Droniste/ });
+
+    fireEvent.click(workerRole);
+
+    await waitFor(() => {
+      expect(foremanRole).toBeDisabled();
+      expect(architectRole).toBeDisabled();
+      expect(droneOperatorRole).toBeDisabled();
+    });
+
+    fireEvent.click(workerRole);
+
+    await waitFor(() => {
+      expect(foremanRole).toBeEnabled();
+    });
+
+    fireEvent.click(foremanRole);
+
+    await waitFor(() => {
+      expect(workerRole).toBeDisabled();
+      expect(architectRole).toBeDisabled();
+      expect(droneOperatorRole).toBeEnabled();
+    });
+  });
+});
+
+describe("OrganizationInvitationForm - envoi API", () => {
   it("envoie une invitation normalisee et affiche le lien genere", async () => {
     let submittedInvitation: CreateOrganizationInvitationRequestDto | null = null;
     const submitOrganizationInvitation: OrganizationInvitationSubmitter = (

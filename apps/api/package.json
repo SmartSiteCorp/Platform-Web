@@ -5,17 +5,23 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
+    "predev": "npm run build -w @smartsite/shared",
     "start": "node dist/main.js",
     "build": "tsc -p tsconfig.build.json",
+    "prebuild": "npm run build -w @smartsite/shared",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretypecheck": "npm run build -w @smartsite/shared",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
+    "pretest": "npm run build -w @smartsite/shared",
     "test:watch": "vitest",
     "db:migrate": "tsx src/database/migrations/run-migrations.ts",
     "db:migration:create": "tsx scripts/create-migration.ts",
-    "openapi:export": "tsx src/openapi/export-openapi.ts"
+    "openapi:export": "tsx src/openapi/export-openapi.ts",
+    "preopenapi:export": "npm run build -w @smartsite/shared"
   },
   "dependencies": {
+    "@smartsite/shared": "0.1.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
