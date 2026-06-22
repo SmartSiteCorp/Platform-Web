@@ -53,6 +53,7 @@ export class OrganizationsService {
     const organization = await this.organizationsRepository.updateById(
       organizationId,
       this.normalizeUpdateRequest(request),
+      user.sub,
     );
 
     if (!organization) {

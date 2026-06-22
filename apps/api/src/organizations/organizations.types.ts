@@ -20,11 +20,21 @@ export interface UpdateOrganizationInput {
   readonly address: string | null;
 }
 
+export const organizationUpdatedAuditAction = "organization.updated";
+
+export interface OrganizationAuditLogInput {
+  readonly action: typeof organizationUpdatedAuditAction;
+  readonly actorUserId: string;
+  readonly changedFields: readonly string[];
+  readonly organizationId: string;
+}
+
 export interface OrganizationsRepositoryPort {
   findById(organizationId: string): Promise<OrganizationDetails | null>;
   findUserAccess(userId: string, organizationId: string): Promise<OrganizationUserAccess | null>;
   updateById(
     organizationId: string,
     input: UpdateOrganizationInput,
+    actorUserId: string,
   ): Promise<OrganizationDetails | null>;
 }

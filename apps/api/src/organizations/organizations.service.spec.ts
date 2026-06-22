@@ -16,6 +16,7 @@ class FakeOrganizationsRepository implements OrganizationsRepositoryPort {
     status: "active",
   };
   public organization: OrganizationDetails | null = createOrganization();
+  public updatedByUserId: string | null = null;
   public updatedInput: UpdateOrganizationInput | null = null;
 
   public findById(): Promise<OrganizationDetails | null> {
@@ -29,7 +30,9 @@ class FakeOrganizationsRepository implements OrganizationsRepositoryPort {
   public updateById(
     organizationId: string,
     input: UpdateOrganizationInput,
+    actorUserId: string,
   ): Promise<OrganizationDetails | null> {
+    this.updatedByUserId = actorUserId;
     this.updatedInput = input;
 
     return Promise.resolve({
@@ -71,6 +74,7 @@ describe("OrganizationsService", () => {
       name: "Stern Tech Renovation",
       phone: "+33123456789",
     });
+    expect(repository.updatedByUserId).toBe("user-id");
     expect(result).toMatchObject({
       email: "contact@smartsite.fr",
       name: "Stern Tech Renovation",

@@ -3,10 +3,8 @@ import "reflect-metadata";
 import type { INestApplication } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
-import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
-import type { QueryResultRow } from "pg";
-import request, { type Response } from "supertest";
+import request from "supertest";
 import { afterAll, afterEach, beforeAll, expect, it } from "vitest";
 
 import { configureHttpApp } from "../app-http.js";
@@ -14,32 +12,15 @@ import { AppModule } from "../app.module.js";
 import type { RegisterResponseDto } from "../auth/auth.dto.js";
 import type { AccessTokenPayload } from "../auth/auth.types.js";
 import { DatabaseService } from "../database/database.service.js";
-import type { OrganizationResponseDto } from "./organizations.dto.js";
-
-interface RegisterPayload {
-  readonly organizationName: string;
-  readonly email: string;
-  readonly password: string;
-  readonly firstName: string;
-  readonly lastName: string;
-}
-
-interface OrganizationDatabaseRow extends QueryResultRow {
-  readonly name: string;
-  readonly email: string;
-  readonly phone: string | null;
-  readonly address: string | null;
-}
-
-interface ApiErrorResponse {
-  readonly message: readonly string[];
-  readonly statusCode: number;
-}
-
-interface RegisteredTestAccount {
-  readonly request: RegisterPayload;
-  readonly response: RegisterResponseDto;
-}
+import {
+  createRegisterRequest,
+  parseApiErrorResponse,
+  parseOrganizationResponse,
+  parseRegisterResponse,
+  type OrganizationAuditLogDatabaseRow,
+  type OrganizationDatabaseRow,
+  type RegisteredTestAccount,
+} from "./organizations-test-helpers.js";
 
 const createdEmails = new Set<string>();
 let app: INestApplication<Server>;
@@ -118,6 +99,34 @@ it("updates and persists organization information", async () => {
     name: "Stern Tech Renovation",
     phone: "+33123456789",
   });
+});
+
+it("records organization updates without sensitive values", async () => {
+  const account = await createRegisteredAccount();
+
+  await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({
+      address: "12 rue des Artisans, 75001 Paris",
+      email: "contact@smartsite.fr",
+      name: "Stern Tech Renovation",
+      phone: "+33123456789",
+    })
+    .expect(200);
+  const auditLog = await findLatestOrganizationAuditLog(account.response.organization.id);
+  const serializedAuditLog = JSON.stringify(auditLog);
+
+  expect(auditLog).toStrictEqual({
+    action: "organization.updated",
+    actor_user_id: account.response.user.id,
+    changed_fields: ["name", "email", "phone", "address"],
+    metadata: {
+      changedFields: ["name", "email", "phone", "address"],
+    },
+  });
+  expect(serializedAuditLog).not.toContain(account.request.password);
+  expect(serializedAuditLog).not.toContain(account.response.accessToken);
 });
 
 it("rejects organization access without JWT", async () => {
@@ -202,18 +211,6 @@ async function createRegisteredAccount(): Promise<RegisteredTestAccount> {
   };
 }
 
-function createRegisterRequest(): RegisterPayload {
-  const identifier = randomUUID();
-
-  return {
-    email: `organization-${identifier}@smartsite.test`,
-    firstName: "Andreea",
-    lastName: "Rauta",
-    organizationName: "Stern Tech",
-    password: "SmartSite.2026",
-  };
-}
-
 async function findOrganization(organizationId: string): Promise<OrganizationDatabaseRow> {
   const result = await databaseService.query<OrganizationDatabaseRow>(
     `
@@ -227,6 +224,28 @@ async function findOrganization(organizationId: string): Promise<OrganizationDat
 
   if (!row) {
     throw new Error(`Organization not found: ${organizationId}.`);
+  }
+
+  return row;
+}
+
+async function findLatestOrganizationAuditLog(
+  organizationId: string,
+): Promise<OrganizationAuditLogDatabaseRow> {
+  const result = await databaseService.query<OrganizationAuditLogDatabaseRow>(
+    `
+      SELECT action, actor_user_id, changed_fields, metadata
+      FROM organization_audit_logs
+      WHERE organization_id = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [organizationId],
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error(`Organization audit log not found: ${organizationId}.`);
   }
 
   return row;
@@ -261,16 +280,4 @@ async function deleteRegisteredAccount(email: string): Promise<void> {
     `,
     [email],
   );
-}
-
-function parseRegisterResponse(response: Response): RegisterResponseDto {
-  return JSON.parse(response.text) as RegisterResponseDto;
-}
-
-function parseOrganizationResponse(response: Response): OrganizationResponseDto {
-  return JSON.parse(response.text) as OrganizationResponseDto;
-}
-
-function parseApiErrorResponse(response: Response): ApiErrorResponse {
-  return JSON.parse(response.text) as ApiErrorResponse;
 }
