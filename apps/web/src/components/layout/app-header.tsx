@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { SmartSiteLogo } from "@/components/brand/smartsite-logo";
 import { cn } from "@/lib/utils";
+import { LogoutButton } from "./logout-button";
 
 type AppHeaderItem = "dashboard" | "organization-settings";
 
@@ -40,6 +41,7 @@ export function AppHeader({ activeItem }: AppHeaderProps) {
           >
             <Bell aria-hidden="true" className="h-5 w-5" />
           </button>
+          <LogoutButton />
         </div>
       </div>
     </header>
