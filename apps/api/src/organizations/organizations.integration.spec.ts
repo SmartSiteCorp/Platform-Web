@@ -1,6 +1,7 @@
 import "reflect-metadata";
 
 import type { INestApplication } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
 import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
@@ -11,6 +12,7 @@ import { afterAll, afterEach, beforeAll, expect, it } from "vitest";
 import { configureHttpApp } from "../app-http.js";
 import { AppModule } from "../app.module.js";
 import type { RegisterResponseDto } from "../auth/auth.dto.js";
+import type { AccessTokenPayload } from "../auth/auth.types.js";
 import { DatabaseService } from "../database/database.service.js";
 import type { OrganizationResponseDto } from "./organizations.dto.js";
 
@@ -42,6 +44,7 @@ interface RegisteredTestAccount {
 const createdEmails = new Set<string>();
 let app: INestApplication<Server>;
 let databaseService: DatabaseService;
+let jwtService: JwtService;
 
 beforeAll(async () => {
   process.env.AUTH_REGISTER_RATE_LIMIT_LIMIT = "100";
@@ -56,6 +59,7 @@ beforeAll(async () => {
   await app.init();
 
   databaseService = app.get(DatabaseService);
+  jwtService = app.get(JwtService);
 });
 
 afterEach(async () => {
@@ -122,6 +126,19 @@ it("rejects organization access without JWT", async () => {
   await request(getHttpServer())
     .get(`/api/organizations/${account.response.organization.id}`)
     .expect(401);
+});
+
+it("rejects organization access with an expired JWT", async () => {
+  const account = await createRegisteredAccount();
+  const expiredAccessToken = await signExpiredAccessToken(account.response);
+
+  const response = await request(getHttpServer())
+    .get(`/api/organizations/${account.response.organization.id}`)
+    .set("Authorization", `Bearer ${expiredAccessToken}`)
+    .expect(401);
+  const responseBody = parseApiErrorResponse(response);
+
+  expect(responseBody.message).toContain("Le token d'authentification est invalide.");
 });
 
 it("rejects access to another organization", async () => {
@@ -217,6 +234,18 @@ async function findOrganization(organizationId: string): Promise<OrganizationDat
 
 async function removeUserRoles(userId: string): Promise<void> {
   await databaseService.query("DELETE FROM user_roles WHERE user_id = $1", [userId]);
+}
+
+function signExpiredAccessToken(account: RegisterResponseDto): Promise<string> {
+  const expiredPayload: AccessTokenPayload = {
+    email: account.user.email,
+    organizationId: account.organization.id,
+    roles: account.user.roles,
+    sub: account.user.id,
+  };
+
+  // Le token est volontairement expiré pour valider la protection des routes privées.
+  return jwtService.signAsync(expiredPayload, { expiresIn: -1 });
 }
 
 async function deleteRegisteredAccount(email: string): Promise<void> {
