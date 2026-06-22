@@ -3,7 +3,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses } from './types.gen';
+import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -48,6 +48,25 @@ export const organizationsControllerGetOrganization = <ThrowOnError extends bool
 export const organizationsControllerUpdateOrganization = <ThrowOnError extends boolean = false>(options: Options<OrganizationsControllerUpdateOrganizationData, ThrowOnError>) => (options.client ?? client).put<OrganizationsControllerUpdateOrganizationResponses, OrganizationsControllerUpdateOrganizationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/organizations/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const organizationInvitationsControllerCreateInvitation = <ThrowOnError extends boolean = false>(options: Options<OrganizationInvitationsControllerCreateInvitationData, ThrowOnError>) => (options.client ?? client).post<OrganizationInvitationsControllerCreateInvitationResponses, OrganizationInvitationsControllerCreateInvitationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/organizations/{id}/invitations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const organizationInvitationsControllerAcceptInvitation = <ThrowOnError extends boolean = false>(options: Options<OrganizationInvitationsControllerAcceptInvitationData, ThrowOnError>) => (options.client ?? client).post<OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerAcceptInvitationErrors, ThrowOnError>({
+    url: '/api/organizations/invitations/accept',
     ...options,
     headers: {
         'Content-Type': 'application/json',

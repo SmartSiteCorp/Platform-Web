@@ -63,7 +63,7 @@ export class OrganizationsService {
     return organization;
   }
 
-  private async assertCanManageOrganization(
+  public async assertCanManageOrganization(
     organizationId: string,
     user: AccessTokenPayload,
   ): Promise<void> {
