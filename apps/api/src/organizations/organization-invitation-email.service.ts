@@ -198,7 +198,12 @@ export class OrganizationInvitationEmailService {
         roleCodes: [...input.roleCodes],
       },
       subject: "Invitation SmartSite",
-      text: this.buildInvitationText(invitationUrl, input.organizationName, roleCodes, input.expiresAt),
+      text: this.buildInvitationText(
+        invitationUrl,
+        input.organizationName,
+        roleCodes,
+        input.expiresAt,
+      ),
       to: input.email,
     };
   }
