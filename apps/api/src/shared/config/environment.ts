@@ -3,13 +3,50 @@ import { existsSync } from "node:fs";
 import { config as loadDotenvFile } from "dotenv";
 
 const defaultApiPort = 4000;
+const defaultInvitationExpiresInSeconds = 604800;
 const defaultJwtAccessExpiresInSeconds = 25200;
 const defaultRegisterRateLimitLimit = 5;
 const defaultRegisterRateLimitTtlSeconds = 60;
+const defaultEmailSmtpPort = 587;
+const defaultEmailSmtpSecure = false;
+const supportedEmailProviders = ["log", "http", "smtp"] as const;
 const jwtAccessSecretMinLength = 32;
 const supportedNodeEnvironments = ["development", "test", "production"] as const;
 
+export type EmailProvider = (typeof supportedEmailProviders)[number];
+
 export type NodeEnvironment = (typeof supportedNodeEnvironments)[number];
+
+export interface EmailSmtpConfiguration {
+  readonly host: string;
+  readonly password: string;
+  readonly port: number;
+  readonly secure: boolean;
+  readonly user: string;
+}
+
+export type EmailProviderConfiguration =
+  | {
+      readonly fromAddress: string;
+      readonly httpBearerToken: string | null;
+      readonly httpEndpoint: null;
+      readonly provider: "log";
+      readonly smtp: null;
+    }
+  | {
+      readonly fromAddress: string;
+      readonly httpBearerToken: string | null;
+      readonly httpEndpoint: string;
+      readonly provider: "http";
+      readonly smtp: null;
+    }
+  | {
+      readonly fromAddress: string;
+      readonly httpBearerToken: null;
+      readonly httpEndpoint: null;
+      readonly provider: "smtp";
+      readonly smtp: EmailSmtpConfiguration;
+    };
 
 export function getNodeEnvironment(): NodeEnvironment {
   const rawEnvironment = process.env.NODE_ENV?.trim();
@@ -87,6 +124,47 @@ export function getJwtAccessExpiresInSeconds(): number {
   );
 }
 
+export function getOrganizationInvitationExpiresInSeconds(): number {
+  return getOptionalPositiveIntegerEnv(
+    "ORGANIZATION_INVITATION_EXPIRES_IN_SECONDS",
+    defaultInvitationExpiresInSeconds,
+  );
+}
+
+export function getEmailProviderConfiguration(): EmailProviderConfiguration {
+  const provider = getEmailProvider();
+  const fromAddress = getEmailFromAddress(provider);
+  const httpBearerToken = getOptionalEnv("EMAIL_HTTP_BEARER_TOKEN");
+
+  if (provider === "http") {
+    return {
+      fromAddress,
+      httpBearerToken,
+      httpEndpoint: getRequiredEmailHttpEndpoint(),
+      provider,
+      smtp: null,
+    };
+  }
+
+  if (provider === "smtp") {
+    return {
+      fromAddress,
+      httpBearerToken: null,
+      httpEndpoint: null,
+      provider,
+      smtp: getRequiredEmailSmtpConfiguration(),
+    };
+  }
+
+  return {
+    fromAddress,
+    httpBearerToken,
+    httpEndpoint: null,
+    provider,
+    smtp: null,
+  };
+}
+
 export function getRegisterRateLimitLimit(): number {
   return getOptionalPositiveIntegerEnv(
     "AUTH_REGISTER_RATE_LIMIT_LIMIT",
@@ -123,6 +201,82 @@ function getRequiredEnv(name: string): string {
   return value;
 }
 
+function getOptionalEnv(name: string): string | null {
+  const value = process.env[name]?.trim();
+
+  return value ? value : null;
+}
+
+function getOptionalBooleanEnv(name: string, defaultValue: boolean): boolean {
+  const rawValue = process.env[name]?.trim().toLowerCase();
+
+  if (!rawValue) {
+    return defaultValue;
+  }
+
+  if (rawValue === "true") {
+    return true;
+  }
+
+  if (rawValue === "false") {
+    return false;
+  }
+
+  throw new Error(`${name} must be true or false.`);
+}
+
+function getEmailProvider(): EmailProvider {
+  const rawProvider = process.env.EMAIL_PROVIDER?.trim().toLowerCase();
+
+  if (!rawProvider) {
+    if (getNodeEnvironment() === "production") {
+      throw new Error("EMAIL_PROVIDER is required in production.");
+    }
+
+    return "log";
+  }
+
+  if (isEmailProvider(rawProvider)) {
+    return rawProvider;
+  }
+
+  throw new Error("EMAIL_PROVIDER must be one of: log, http, smtp.");
+}
+
+function getEmailFromAddress(provider: EmailProvider): string {
+  const fromAddress = getOptionalEnv("EMAIL_FROM_ADDRESS");
+
+  if (fromAddress) {
+    return fromAddress;
+  }
+
+  if (getNodeEnvironment() === "production" || provider === "http" || provider === "smtp") {
+    throw new Error("EMAIL_FROM_ADDRESS is required for the configured email provider.");
+  }
+
+  return "no-reply@smartsite.local";
+}
+
+function getRequiredEmailSmtpConfiguration(): EmailSmtpConfiguration {
+  return {
+    host: getRequiredEnv("EMAIL_SMTP_HOST"),
+    password: getRequiredEnv("EMAIL_SMTP_PASSWORD"),
+    port: getOptionalPositiveIntegerEnv("EMAIL_SMTP_PORT", defaultEmailSmtpPort),
+    secure: getOptionalBooleanEnv("EMAIL_SMTP_SECURE", defaultEmailSmtpSecure),
+    user: getRequiredEnv("EMAIL_SMTP_USER"),
+  };
+}
+
+function getRequiredEmailHttpEndpoint(): string {
+  const endpoint = getRequiredEnv("EMAIL_HTTP_ENDPOINT");
+
+  try {
+    return new URL(endpoint).toString();
+  } catch {
+    throw new Error("EMAIL_HTTP_ENDPOINT must be a valid URL.");
+  }
+}
+
 function parsePositiveInteger(name: string, value: string): number {
   const parsedValue = Number.parseInt(value, 10);
 
@@ -136,6 +290,16 @@ function parsePositiveInteger(name: string, value: string): number {
 function isNodeEnvironment(value: string): value is NodeEnvironment {
   for (const environment of supportedNodeEnvironments) {
     if (environment === value) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isEmailProvider(value: string): value is EmailProvider {
+  for (const provider of supportedEmailProviders) {
+    if (provider === value) {
       return true;
     }
   }

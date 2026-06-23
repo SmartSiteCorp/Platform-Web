@@ -14,7 +14,9 @@ import { AuthTokenService } from "../auth/auth-token.service.js";
 import type { AccessTokenPayload, AuthTokenSigner, PasswordHasher } from "../auth/auth.types.js";
 import { isPasswordCompliant } from "../auth/password-policy.js";
 import { PasswordHasherService } from "../auth/password-hasher.service.js";
+import { getOrganizationInvitationExpiresInSeconds } from "../shared/config/environment.js";
 import { OrganizationInvitationAcceptanceRepository } from "./organization-invitation-acceptance.repository.js";
+import { OrganizationInvitationEmailService } from "./organization-invitation-email.service.js";
 import { OrganizationInvitationTokenService } from "./organization-invitation-token.service.js";
 import {
   AcceptOrganizationInvitationRequestDto,
@@ -43,7 +45,6 @@ interface NormalizedAcceptInvitationInput {
   readonly phone: string | null;
 }
 
-const invitationExpiresInMilliseconds = 7 * 24 * 60 * 60 * 1000;
 const assignableInvitationRoleCodes = new Set([
   "architecte",
   "chef_chantier",
@@ -60,6 +61,8 @@ export class OrganizationInvitationsService {
     private readonly acceptanceRepository: OrganizationInvitationAcceptanceRepositoryPort,
     @Inject(OrganizationInvitationTokenService)
     private readonly invitationTokenService: OrganizationInvitationTokenService,
+    @Inject(OrganizationInvitationEmailService)
+    private readonly invitationEmailService: OrganizationInvitationEmailService,
     @Inject(OrganizationsService)
     private readonly organizationsService: OrganizationsService,
     @Inject(PasswordHasherService)
@@ -79,7 +82,7 @@ export class OrganizationInvitationsService {
     const token = this.invitationTokenService.createToken();
     const result = await this.invitationsRepository.createInvitation({
       email: normalizedRequest.email,
-      expiresAt: new Date(Date.now() + invitationExpiresInMilliseconds),
+      expiresAt: this.createExpirationDate(),
       invitedBy: user.sub,
       organizationId,
       roleCodes: normalizedRequest.roleCodes,
@@ -87,6 +90,27 @@ export class OrganizationInvitationsService {
     });
 
     if (result.status === "created") {
+      const deliveryResult = await this.invitationEmailService.sendInvitation({
+        email: result.invitation.email,
+        expiresAt: result.invitation.expiresAt,
+        invitationId: result.invitation.id,
+        organizationId: result.invitation.organizationId,
+        roleCodes: result.invitation.roleCodes,
+        token,
+      });
+
+      // Le token complet ne doit jamais être stocké dans l'audit.
+      await this.invitationsRepository.createInvitationDeliveryAuditLog({
+        actorUserId: user.sub,
+        expiresAt: result.invitation.expiresAt,
+        failureReason: deliveryResult.failureReason,
+        invitationId: result.invitation.id,
+        organizationId: result.invitation.organizationId,
+        provider: deliveryResult.provider,
+        roleCodes: result.invitation.roleCodes,
+        status: deliveryResult.status,
+      });
+
       return {
         ...result.invitation,
         token,
@@ -147,6 +171,10 @@ export class OrganizationInvitationsService {
     }
 
     throw new UnauthorizedException(["L'invitation est invalide."]);
+  }
+
+  private createExpirationDate(): Date {
+    return new Date(Date.now() + getOrganizationInvitationExpiresInSeconds() * 1000);
   }
 
   private normalizeCreateInvitationRequest(

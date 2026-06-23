@@ -1,4 +1,5 @@
 import type { RegisteredAccount, RegisteredOrganization } from "../auth/auth.types.js";
+import type { OrganizationInvitationEmailDeliveryStatus } from "./organization-invitation-email.service.js";
 
 export interface OrganizationInvitationRole {
   readonly id: string;
@@ -25,6 +26,19 @@ export interface OrganizationInvitationDetails {
 
 export interface OrganizationInvitationWithToken extends OrganizationInvitationDetails {
   readonly token: string;
+}
+
+export const organizationInvitationEmailAuditAction = "organization.invitation.email";
+
+export interface CreateOrganizationInvitationDeliveryAuditLogInput {
+  readonly actorUserId: string;
+  readonly expiresAt: string;
+  readonly failureReason: string | null;
+  readonly invitationId: string;
+  readonly organizationId: string;
+  readonly provider: string;
+  readonly roleCodes: readonly string[];
+  readonly status: OrganizationInvitationEmailDeliveryStatus;
 }
 
 export type CreateOrganizationInvitationResult =
@@ -70,6 +84,9 @@ export interface OrganizationInvitationRepositoryPort {
   createInvitation(
     input: CreateOrganizationInvitationInput,
   ): Promise<CreateOrganizationInvitationResult>;
+  createInvitationDeliveryAuditLog(
+    input: CreateOrganizationInvitationDeliveryAuditLogInput,
+  ): Promise<void>;
 }
 
 export interface OrganizationInvitationAcceptanceRepositoryPort {

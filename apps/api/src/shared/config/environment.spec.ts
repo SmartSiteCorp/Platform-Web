@@ -7,10 +7,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   getApiPort,
   getAppOrigin,
+  getEmailProviderConfiguration,
   getEnvironmentFilePaths,
   getJwtAccessExpiresInSeconds,
   getJwtAccessSecret,
   getNodeEnvironment,
+  getOrganizationInvitationExpiresInSeconds,
   getRegisterRateLimitLimit,
   getRegisterRateLimitTtlMilliseconds,
   loadEnvironmentVariables,
@@ -57,10 +59,21 @@ describe("environment", () => {
     delete process.env.APP_ORIGIN;
     delete process.env.AUTH_REGISTER_RATE_LIMIT_LIMIT;
     delete process.env.AUTH_REGISTER_RATE_LIMIT_TTL_SECONDS;
+    delete process.env.EMAIL_PROVIDER;
+    delete process.env.EMAIL_FROM_ADDRESS;
+    delete process.env.ORGANIZATION_INVITATION_EXPIRES_IN_SECONDS;
     process.env.NODE_ENV = "development";
 
     expect(getApiPort()).toBe(4000);
     expect(getAppOrigin()).toBe("http://localhost:3000");
+    expect(getEmailProviderConfiguration()).toStrictEqual({
+      fromAddress: "no-reply@smartsite.local",
+      httpBearerToken: null,
+      httpEndpoint: null,
+      provider: "log",
+      smtp: null,
+    });
+    expect(getOrganizationInvitationExpiresInSeconds()).toBe(604800);
     expect(getRegisterRateLimitLimit()).toBe(5);
     expect(getRegisterRateLimitTtlMilliseconds()).toBe(60000);
   });
@@ -79,7 +92,9 @@ describe("environment", () => {
 
     expect(() => getApiPort()).toThrow("API_PORT must be a positive integer.");
   });
+});
 
+describe("environment file loading", () => {
   it("loads existing env files without overriding process values", () => {
     const temporaryDirectory = mkdtempSync(join(tmpdir(), "smartsite-env-"));
 
@@ -133,5 +148,93 @@ describe("JWT environment", () => {
     process.env.JWT_ACCESS_EXPIRES_IN_SECONDS = "900";
 
     expect(getJwtAccessExpiresInSeconds()).toBe(900);
+  });
+});
+
+describe("email environment", () => {
+  it("uses the configured HTTP email provider", () => {
+    process.env.EMAIL_PROVIDER = "http";
+    process.env.EMAIL_FROM_ADDRESS = "no-reply@smartsite.fr";
+    process.env.EMAIL_HTTP_BEARER_TOKEN = "provider-token";
+    process.env.EMAIL_HTTP_ENDPOINT = "https://email.smartsite.test/send";
+
+    expect(getEmailProviderConfiguration()).toStrictEqual({
+      fromAddress: "no-reply@smartsite.fr",
+      httpBearerToken: "provider-token",
+      httpEndpoint: "https://email.smartsite.test/send",
+      provider: "http",
+      smtp: null,
+    });
+  });
+
+  it("uses the configured SMTP email provider", () => {
+    process.env.EMAIL_PROVIDER = "smtp";
+    process.env.EMAIL_FROM_ADDRESS = "andreearbb@gmail.com";
+    process.env.EMAIL_SMTP_HOST = "smtp.gmail.com";
+    process.env.EMAIL_SMTP_PASSWORD = "application-password";
+    process.env.EMAIL_SMTP_PORT = "465";
+    process.env.EMAIL_SMTP_SECURE = "true";
+    process.env.EMAIL_SMTP_USER = "andreearbb@gmail.com";
+
+    expect(getEmailProviderConfiguration()).toStrictEqual({
+      fromAddress: "andreearbb@gmail.com",
+      httpBearerToken: null,
+      httpEndpoint: null,
+      provider: "smtp",
+      smtp: {
+        host: "smtp.gmail.com",
+        password: "application-password",
+        port: 465,
+        secure: true,
+        user: "andreearbb@gmail.com",
+      },
+    });
+  });
+
+  it("rejects invalid email provider configuration", () => {
+    process.env.EMAIL_PROVIDER = "graph";
+
+    expect(() => getEmailProviderConfiguration()).toThrow("EMAIL_PROVIDER must be one of");
+
+    process.env.EMAIL_PROVIDER = "http";
+    process.env.EMAIL_FROM_ADDRESS = "no-reply@smartsite.fr";
+    process.env.EMAIL_HTTP_ENDPOINT = "not-an-url";
+
+    expect(() => getEmailProviderConfiguration()).toThrow(
+      "EMAIL_HTTP_ENDPOINT must be a valid URL.",
+    );
+
+    process.env.EMAIL_PROVIDER = "smtp";
+    process.env.EMAIL_FROM_ADDRESS = "andreearbb@gmail.com";
+    process.env.EMAIL_SMTP_HOST = "smtp.gmail.com";
+    process.env.EMAIL_SMTP_PASSWORD = "application-password";
+    process.env.EMAIL_SMTP_SECURE = "yes";
+    process.env.EMAIL_SMTP_USER = "andreearbb@gmail.com";
+
+    expect(() => getEmailProviderConfiguration()).toThrow(
+      "EMAIL_SMTP_SECURE must be true or false.",
+    );
+  });
+
+  it("requires explicit email configuration in production", () => {
+    process.env.NODE_ENV = "production";
+    delete process.env.EMAIL_PROVIDER;
+    delete process.env.EMAIL_FROM_ADDRESS;
+
+    expect(() => getEmailProviderConfiguration()).toThrow(
+      "EMAIL_PROVIDER is required in production.",
+    );
+
+    process.env.EMAIL_PROVIDER = "log";
+
+    expect(() => getEmailProviderConfiguration()).toThrow(
+      "EMAIL_FROM_ADDRESS is required for the configured email provider.",
+    );
+  });
+
+  it("uses the configured organization invitation expiration", () => {
+    process.env.ORGANIZATION_INVITATION_EXPIRES_IN_SECONDS = "3600";
+
+    expect(getOrganizationInvitationExpiresInSeconds()).toBe(3600);
   });
 });
