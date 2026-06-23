@@ -3,7 +3,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses } from './types.gen';
+import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses, OrganizationUserRolesControllerAddUserRoleData, OrganizationUserRolesControllerAddUserRoleErrors, OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerGetUserRolesData, OrganizationUserRolesControllerGetUserRolesErrors, OrganizationUserRolesControllerGetUserRolesResponses, OrganizationUserRolesControllerRemoveUserRoleData, OrganizationUserRolesControllerRemoveUserRoleErrors, OrganizationUserRolesControllerRemoveUserRoleResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -72,4 +72,26 @@ export const organizationInvitationsControllerAcceptInvitation = <ThrowOnError e
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+export const organizationUserRolesControllerGetUserRoles = <ThrowOnError extends boolean = false>(options: Options<OrganizationUserRolesControllerGetUserRolesData, ThrowOnError>) => (options.client ?? client).get<OrganizationUserRolesControllerGetUserRolesResponses, OrganizationUserRolesControllerGetUserRolesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/organizations/{organizationId}/users/{userId}/roles',
+    ...options
+});
+
+export const organizationUserRolesControllerAddUserRole = <ThrowOnError extends boolean = false>(options: Options<OrganizationUserRolesControllerAddUserRoleData, ThrowOnError>) => (options.client ?? client).post<OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerAddUserRoleErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/organizations/{organizationId}/users/{userId}/roles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const organizationUserRolesControllerRemoveUserRole = <ThrowOnError extends boolean = false>(options: Options<OrganizationUserRolesControllerRemoveUserRoleData, ThrowOnError>) => (options.client ?? client).delete<OrganizationUserRolesControllerRemoveUserRoleResponses, OrganizationUserRolesControllerRemoveUserRoleErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/organizations/{organizationId}/users/{userId}/roles/{roleCode}',
+    ...options
 });

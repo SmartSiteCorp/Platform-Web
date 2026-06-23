@@ -112,6 +112,16 @@ export type AcceptOrganizationInvitationResponseDto = {
     accessToken: string;
 };
 
+export type OrganizationUserRolesResponseDto = {
+    organizationId: string;
+    userId: string;
+    roleCodes: Array<string>;
+};
+
+export type AddOrganizationUserRoleRequestDto = {
+    roleCode: string;
+};
+
 export type AuthControllerRegisterData = {
     body: RegisterRequestDto;
     path?: never;
@@ -314,3 +324,111 @@ export type OrganizationInvitationsControllerAcceptInvitationResponses = {
 };
 
 export type OrganizationInvitationsControllerAcceptInvitationResponse = OrganizationInvitationsControllerAcceptInvitationResponses[keyof OrganizationInvitationsControllerAcceptInvitationResponses];
+
+export type OrganizationUserRolesControllerGetUserRolesData = {
+    body?: never;
+    path: {
+        userId: string;
+        organizationId: string;
+    };
+    query?: never;
+    url: '/api/organizations/{organizationId}/users/{userId}/roles';
+};
+
+export type OrganizationUserRolesControllerGetUserRolesErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Accès organisation interdit.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Utilisateur organisation introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type OrganizationUserRolesControllerGetUserRolesError = OrganizationUserRolesControllerGetUserRolesErrors[keyof OrganizationUserRolesControllerGetUserRolesErrors];
+
+export type OrganizationUserRolesControllerGetUserRolesResponses = {
+    200: OrganizationUserRolesResponseDto;
+};
+
+export type OrganizationUserRolesControllerGetUserRolesResponse = OrganizationUserRolesControllerGetUserRolesResponses[keyof OrganizationUserRolesControllerGetUserRolesResponses];
+
+export type OrganizationUserRolesControllerAddUserRoleData = {
+    body: AddOrganizationUserRoleRequestDto;
+    path: {
+        userId: string;
+        organizationId: string;
+    };
+    query?: never;
+    url: '/api/organizations/{organizationId}/users/{userId}/roles';
+};
+
+export type OrganizationUserRolesControllerAddUserRoleErrors = {
+    /**
+     * Rôle invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Accès organisation interdit.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Utilisateur organisation introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type OrganizationUserRolesControllerAddUserRoleError = OrganizationUserRolesControllerAddUserRoleErrors[keyof OrganizationUserRolesControllerAddUserRoleErrors];
+
+export type OrganizationUserRolesControllerAddUserRoleResponses = {
+    200: OrganizationUserRolesResponseDto;
+};
+
+export type OrganizationUserRolesControllerAddUserRoleResponse = OrganizationUserRolesControllerAddUserRoleResponses[keyof OrganizationUserRolesControllerAddUserRoleResponses];
+
+export type OrganizationUserRolesControllerRemoveUserRoleData = {
+    body?: never;
+    path: {
+        roleCode: string;
+        userId: string;
+        organizationId: string;
+    };
+    query?: never;
+    url: '/api/organizations/{organizationId}/users/{userId}/roles/{roleCode}';
+};
+
+export type OrganizationUserRolesControllerRemoveUserRoleErrors = {
+    /**
+     * Rôle invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Accès organisation interdit.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Utilisateur ou rôle introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type OrganizationUserRolesControllerRemoveUserRoleError = OrganizationUserRolesControllerRemoveUserRoleErrors[keyof OrganizationUserRolesControllerRemoveUserRoleErrors];
+
+export type OrganizationUserRolesControllerRemoveUserRoleResponses = {
+    200: OrganizationUserRolesResponseDto;
+};
+
+export type OrganizationUserRolesControllerRemoveUserRoleResponse = OrganizationUserRolesControllerRemoveUserRoleResponses[keyof OrganizationUserRolesControllerRemoveUserRoleResponses];
