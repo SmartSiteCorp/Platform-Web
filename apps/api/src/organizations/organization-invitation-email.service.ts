@@ -197,7 +197,7 @@ export class OrganizationInvitationEmailService {
         organizationId: input.organizationId,
         roleCodes: [...input.roleCodes],
       },
-      subject: "Invitation SmartSite",
+      subject: `Invitation ${input.organizationName}`,
       text: this.buildInvitationText(
         invitationUrl,
         input.organizationName,
@@ -230,9 +230,9 @@ export class OrganizationInvitationEmailService {
             <tr>
               <td style="background-color:#8ca69c;padding:32px 24px;text-align:center;">
                 <div style="display:inline-flex;align-items:center;justify-content:center;width:96px;height:96px;border-radius:22px;background-color:#ffffff;margin:0 auto 20px auto;">
-                  <img src="${escapeHtml(logoUrl)}" alt="SmartSite" width="80" style="display:block;max-width:80px;height:auto;" />
+                  <img src="${escapeHtml(logoUrl)}" alt="Logo ${escapeHtml(organizationName)}" width="80" style="display:block;max-width:80px;height:auto;" />
                 </div>
-                <h1 style="margin:0;font-size:28px;line-height:36px;color:#ffffff;font-weight:700;">Invitation SmartSite</h1>
+                <h1 style="margin:0;font-size:28px;line-height:36px;color:#ffffff;font-weight:700;">Invitation chez ${escapeHtml(organizationName)}</h1>
                 <p style="margin:12px auto 0 auto;max-width:420px;font-size:16px;line-height:24px;color:rgba(255,255,255,0.92);">Vous êtes invité à rejoindre l'organisation ${escapeHtml(organizationName)} pour collaborer, suivre vos chantiers et gérer vos tâches.</p>
               </td>
             </tr>

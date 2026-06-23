@@ -42,9 +42,14 @@ describe("OrganizationInvitationEmailService", () => {
     });
     expect(sentMessage).toMatchObject({
       from: "andreearbb@gmail.com",
-      subject: "Invitation SmartSite",
+      subject: "Invitation Stern Bat",
       to: "alex.fraioli@example.com",
     });
+    expect(sentMessage.text).toContain(
+      "Vous avez été invité à rejoindre l'organisation Stern Bat.",
+    );
+    expect(sentMessage.html).toContain("Invitation chez Stern Bat");
+    expect(sentMessage.html).toContain('alt="Logo Stern Bat"');
     expect(sentMessage.text).toContain("secure-invitation-token");
     expect(sentMessage.html).toContain("Accepter l'invitation");
     expect(sentMessage.html).toContain("data:image/png;base64,");
