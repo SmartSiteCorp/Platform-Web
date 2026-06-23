@@ -18,20 +18,28 @@ import {
   deleteCreatedOrganizations,
   expireInvitation,
   findInvitation,
+  findInvitationEmailAuditLogs,
   findInvitedUser,
   hashInvitationToken,
   removeUserRoles,
   verifyInvitedPasswordHash,
 } from "./organization-invitations-test-helpers.js";
+import { organizationInvitationEmailAuditAction } from "./organization-invitations.types.js";
 import { parseApiErrorResponse, type RegisteredTestAccount } from "./organizations-test-helpers.js";
 
 const createdOrganizationIds = new Set<string>();
+const expectedInvitationLifetimeInSeconds = 3600;
+const originalEnvironment = { ...process.env };
 let app: INestApplication<Server>;
 let databaseService: DatabaseService;
 
 beforeAll(async () => {
   process.env.AUTH_REGISTER_RATE_LIMIT_LIMIT = "100";
   process.env.AUTH_REGISTER_RATE_LIMIT_TTL_SECONDS = "60";
+  process.env.EMAIL_PROVIDER = "log";
+  process.env.ORGANIZATION_INVITATION_EXPIRES_IN_SECONDS =
+    expectedInvitationLifetimeInSeconds.toString();
+  delete process.env.EMAIL_HTTP_ENDPOINT;
 
   const testingModule = await Test.createTestingModule({
     imports: [AppModule],
@@ -51,6 +59,7 @@ afterEach(async () => {
 
 afterAll(async () => {
   await app.close();
+  process.env = { ...originalEnvironment };
 });
 
 it("creates a secure organization invitation with selected roles", async () => {
@@ -69,14 +78,37 @@ it("creates a secure organization invitation with selected roles", async () => {
   });
   expect(responseBody.roleCodes).toStrictEqual(["chef_chantier", "droniste"]);
   expect(responseBody.token.length).toBeGreaterThan(20);
-  expect(invitation).toStrictEqual({
+  expect(invitation).toMatchObject({
     accepted_at: null,
     accepted_by: null,
     email: invitedEmail,
     role_codes: ["chef_chantier", "droniste"],
     token_hash: hashInvitationToken(responseBody.token),
   });
+  expect(invitation.expires_at.getTime() - invitation.created_at.getTime()).toBeGreaterThanOrEqual(
+    (expectedInvitationLifetimeInSeconds - 10) * 1000,
+  );
+  expect(invitation.expires_at.getTime() - invitation.created_at.getTime()).toBeLessThanOrEqual(
+    (expectedInvitationLifetimeInSeconds + 10) * 1000,
+  );
   expect(invitation.token_hash).not.toBe(responseBody.token);
+
+  const auditLogs = await findInvitationEmailAuditLogs(databaseService, responseBody.id);
+  const auditLog = getRequiredAuditLog(auditLogs);
+
+  expect(auditLog).toMatchObject({
+    action: organizationInvitationEmailAuditAction,
+    actor_user_id: account.response.user.id,
+    changed_fields: [],
+    organization_id: account.response.organization.id,
+    metadata: {
+      invitationId: responseBody.id,
+      provider: "log",
+      roleCodes: ["chef_chantier", "droniste"],
+      status: "sent",
+    },
+  });
+  expect(JSON.stringify(auditLog.metadata)).not.toContain(responseBody.token);
 });
 
 it("rejects incompatible invitation role combinations", async () => {
@@ -154,6 +186,25 @@ it("rejects member emails and duplicate active invitations", async () => {
 
   expect(memberError.message).toContain("Cet email est déjà membre de l'organisation.");
   expect(duplicateError.message).toContain("Une invitation active existe déjà pour cet email.");
+});
+
+it("allows creating a new invitation after the previous one expired", async () => {
+  const account = await createRegisteredAccount();
+  const invitedEmail = createInvitationEmail();
+  const expiredInvitation = await createInvitation(getHttpServer(), account, {
+    email: invitedEmail,
+    roleCodes: ["architecte"],
+  });
+
+  await expireInvitation(databaseService, expiredInvitation.id);
+
+  const newInvitation = await createInvitation(getHttpServer(), account, {
+    email: invitedEmail,
+    roleCodes: ["architecte"],
+  });
+
+  expect(newInvitation.id).not.toBe(expiredInvitation.id);
+  expect(newInvitation.email).toBe(invitedEmail);
 });
 
 it("accepts an invitation and creates the user in the organization", async () => {
@@ -242,6 +293,16 @@ it("rejects invalid, expired and already accepted invitations", async () => {
 
 function getHttpServer(): Server {
   return app.getHttpServer();
+}
+
+function getRequiredAuditLog(auditLogs: Awaited<ReturnType<typeof findInvitationEmailAuditLogs>>) {
+  const auditLog = auditLogs[0];
+
+  if (!auditLog) {
+    throw new Error("Invitation email audit log not found.");
+  }
+
+  return auditLog;
 }
 
 function createRegisteredAccount(): Promise<RegisteredTestAccount> {

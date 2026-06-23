@@ -2,14 +2,16 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { QueryResultRow } from "pg";
 
 import { DatabaseService } from "../database/database.service.js";
-import type { DatabaseExecutor } from "../database/database.types.js";
+import type { DatabaseExecutor, JsonObject } from "../database/database.types.js";
 import type {
+  CreateOrganizationInvitationDeliveryAuditLogInput,
   CreateOrganizationInvitationInput,
   CreateOrganizationInvitationResult,
   OrganizationInvitationDetails,
   OrganizationInvitationRepositoryPort,
   OrganizationInvitationRole,
 } from "./organization-invitations.types.js";
+import { organizationInvitationEmailAuditAction } from "./organization-invitations.types.js";
 
 interface IdRow extends QueryResultRow {
   readonly id: string;
@@ -63,6 +65,24 @@ export class OrganizationInvitationsRepository implements OrganizationInvitation
         status: "created",
       };
     });
+  }
+
+  public async createInvitationDeliveryAuditLog(
+    input: CreateOrganizationInvitationDeliveryAuditLogInput,
+  ): Promise<void> {
+    await this.databaseService.query(
+      `
+        INSERT INTO organization_audit_logs
+          (organization_id, actor_user_id, action, changed_fields, metadata)
+        VALUES ($1, $2, $3, ARRAY[]::varchar[], $4::jsonb)
+      `,
+      [
+        input.organizationId,
+        input.actorUserId,
+        organizationInvitationEmailAuditAction,
+        JSON.stringify(this.createInvitationDeliveryMetadata(input)),
+      ],
+    );
   }
 
   private async isEmailAlreadyMember(
@@ -170,6 +190,27 @@ export class OrganizationInvitationsRepository implements OrganizationInvitation
     const existingRoleCodes = new Set(roles.map((role) => role.code));
 
     return expectedRoleCodes.filter((roleCode) => !existingRoleCodes.has(roleCode));
+  }
+
+  private createInvitationDeliveryMetadata(
+    input: CreateOrganizationInvitationDeliveryAuditLogInput,
+  ): JsonObject {
+    const metadata: JsonObject = {
+      expiresAt: input.expiresAt,
+      invitationId: input.invitationId,
+      provider: input.provider,
+      roleCodes: [...input.roleCodes],
+      status: input.status,
+    };
+
+    if (input.failureReason) {
+      return {
+        ...metadata,
+        failureReason: input.failureReason,
+      };
+    }
+
+    return metadata;
   }
 
   private getRequiredRow<Row>(rows: readonly Row[], message: string): Row {

@@ -5,10 +5,12 @@ import type { QueryResultRow } from "pg";
 import request, { type Response } from "supertest";
 
 import type { DatabaseService } from "../database/database.service.js";
+import type { JsonObject } from "../database/database.types.js";
 import type {
   AcceptOrganizationInvitationResponseDto,
   OrganizationInvitationResponseDto,
 } from "./organization-invitations.dto.js";
+import { organizationInvitationEmailAuditAction } from "./organization-invitations.types.js";
 import {
   createRegisterRequest,
   parseRegisterResponse,
@@ -32,9 +34,19 @@ export interface AcceptInvitationRequest {
 export interface InvitationDatabaseRow extends QueryResultRow {
   readonly email: string;
   readonly token_hash: string;
+  readonly created_at: Date;
+  readonly expires_at: Date;
   readonly role_codes: string[];
   readonly accepted_at: Date | null;
   readonly accepted_by: string | null;
+}
+
+export interface InvitationAuditLogDatabaseRow extends QueryResultRow {
+  readonly actor_user_id: string;
+  readonly action: string;
+  readonly changed_fields: string[];
+  readonly metadata: JsonObject;
+  readonly organization_id: string;
 }
 
 export interface InvitedUserDatabaseRow extends QueryResultRow {
@@ -98,6 +110,8 @@ export async function findInvitation(
       SELECT
         organization_invitations.email,
         organization_invitations.token_hash,
+        organization_invitations.created_at,
+        organization_invitations.expires_at,
         organization_invitations.accepted_at,
         organization_invitations.accepted_by,
         COALESCE(
@@ -121,6 +135,23 @@ export async function findInvitation(
   }
 
   return row;
+}
+
+export async function findInvitationEmailAuditLogs(
+  databaseService: DatabaseService,
+  invitationId: string,
+): Promise<readonly InvitationAuditLogDatabaseRow[]> {
+  const result = await databaseService.query<InvitationAuditLogDatabaseRow>(
+    `
+      SELECT organization_id, actor_user_id, action, changed_fields, metadata
+      FROM organization_audit_logs
+      WHERE action = $1 AND metadata->>'invitationId' = $2
+      ORDER BY created_at ASC
+    `,
+    [organizationInvitationEmailAuditAction, invitationId],
+  );
+
+  return result.rows;
 }
 
 export async function findInvitedUser(
