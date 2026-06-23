@@ -29,8 +29,8 @@ describe("AppHeader", () => {
     expect(routerMock.replace).toHaveBeenCalledWith("/login");
   });
 
-  it("keeps the main navigation available", () => {
-    render(<AppHeader activeItem="organization-settings" />);
+  it("keeps the main navigation available for admins", () => {
+    render(<AppHeader activeItem="organization-settings" showSettingsLink={true} />);
 
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/dashboard");
     expect(screen.getByRole("link", { name: "Paramètres" })).toHaveAttribute(
@@ -38,5 +38,12 @@ describe("AppHeader", () => {
       "/settings/organization",
     );
     expect(screen.getByRole("button", { name: "Se déconnecter" })).toBeInTheDocument();
+  });
+
+  it("hides the settings link for non-admin users", () => {
+    render(<AppHeader activeItem="dashboard" showSettingsLink={false} />);
+
+    expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Paramètres" })).not.toBeInTheDocument();
   });
 });

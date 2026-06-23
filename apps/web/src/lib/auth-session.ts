@@ -37,6 +37,10 @@ const accessTokenPayloadSchema = z.object({
   exp: z.number().int().positive(),
 });
 
+export function isOrganizationAdmin(session: RegisterResponseDto): boolean {
+  return session.user.roles.includes("administrateur");
+}
+
 export function saveAuthSession(session: RegisterResponseDto): void {
   window.localStorage.setItem(authSessionStorageKey, JSON.stringify(session));
 }

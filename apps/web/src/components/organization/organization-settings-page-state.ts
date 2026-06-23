@@ -51,6 +51,9 @@ export function useOrganizationSettingsState({
   const redirectToLogin = (): void => {
     router.replace("/login");
   };
+  const redirectToDashboard = (): void => {
+    router.replace("/dashboard");
+  };
 
   useAuthSessionExpiration(activeSession);
 
@@ -58,6 +61,7 @@ export function useOrganizationSettingsState({
     () =>
       loadInitialOrganizationState({
         loadOrganizationDetails,
+        redirectToDashboard,
         redirectToLogin,
         setPageState,
       }),

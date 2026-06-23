@@ -4,6 +4,7 @@ import { Boxes, FileText, Loader2, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { AppHeader } from "@/components/layout/app-header";
+import { isOrganizationAdmin } from "@/lib/auth-session";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -20,7 +21,7 @@ export function DashboardShell() {
 
   return (
     <main className="min-h-screen bg-background">
-      <AppHeader activeItem="dashboard" />
+      <AppHeader activeItem="dashboard" showSettingsLink={isOrganizationAdmin(session)} />
 
       <section className="container py-8">
         <DashboardIntro />

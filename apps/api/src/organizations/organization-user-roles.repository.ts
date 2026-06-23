@@ -3,12 +3,13 @@ import type { QueryResultRow } from "pg";
 import { isOrganizationRoleCode, type OrganizationRoleCode } from "@smartsite/shared";
 
 import { DatabaseService } from "../database/database.service.js";
-import type { DatabaseExecutor } from "../database/database.types.js";
+import type { DatabaseExecutor, JsonObject } from "../database/database.types.js";
 import type {
   OrganizationUserRoles,
   OrganizationUserRolesRepositoryPort,
   ReplaceOrganizationUserRolesInput,
 } from "./organization-user-roles.types.js";
+import { organizationUserRolesUpdatedAuditAction } from "./organization-user-roles.types.js";
 
 interface UserRow extends QueryResultRow {
   readonly id: string;
@@ -45,6 +46,12 @@ export class OrganizationUserRolesRepository implements OrganizationUserRolesRep
         return null;
       }
 
+      // Lecture des rôles actuels pour l'audit avant toute modification.
+      const previousUserRoles = await this.findUserRolesWithExecutor(
+        transaction,
+        input.organizationId,
+        input.userId,
+      );
       const roles = await this.findRolesByCodes(transaction, input.roleCodes);
 
       this.assertAllRolesExist(input.roleCodes, roles);
@@ -52,7 +59,21 @@ export class OrganizationUserRolesRepository implements OrganizationUserRolesRep
       await this.deleteUserRoles(transaction, input.userId);
       await this.insertUserRoles(transaction, input.userId, roles);
 
-      return this.findUserRolesWithExecutor(transaction, input.organizationId, input.userId);
+      const updatedUserRoles = await this.findUserRolesWithExecutor(
+        transaction,
+        input.organizationId,
+        input.userId,
+      );
+
+      await this.createRoleAuditLog(transaction, {
+        actorUserId: input.actorUserId,
+        nextRoleCodes: updatedUserRoles?.roleCodes ?? [],
+        organizationId: input.organizationId,
+        previousRoleCodes: previousUserRoles?.roleCodes ?? [],
+        targetUserId: input.userId,
+      });
+
+      return updatedUserRoles;
     });
   }
 
@@ -141,6 +162,38 @@ export class OrganizationUserRolesRepository implements OrganizationUserRolesRep
         SELECT $1, unnest($2::uuid[])
       `,
       [userId, roles.map((role) => role.id)],
+    );
+  }
+
+  private async createRoleAuditLog(
+    transaction: DatabaseExecutor,
+    input: {
+      readonly actorUserId: string;
+      readonly nextRoleCodes: readonly OrganizationRoleCode[];
+      readonly organizationId: string;
+      readonly previousRoleCodes: readonly OrganizationRoleCode[];
+      readonly targetUserId: string;
+    },
+  ): Promise<void> {
+    const metadata: JsonObject = {
+      nextRoleCodes: [...input.nextRoleCodes],
+      previousRoleCodes: [...input.previousRoleCodes],
+      targetUserId: input.targetUserId,
+    };
+
+    await transaction.query(
+      `
+        INSERT INTO organization_audit_logs
+          (organization_id, actor_user_id, action, changed_fields, metadata)
+        VALUES ($1, $2, $3, $4, $5::jsonb)
+      `,
+      [
+        input.organizationId,
+        input.actorUserId,
+        organizationUserRolesUpdatedAuditAction,
+        ["roleCodes"],
+        JSON.stringify(metadata),
+      ],
     );
   }
 
