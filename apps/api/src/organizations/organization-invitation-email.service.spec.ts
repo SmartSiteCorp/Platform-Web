@@ -22,6 +22,7 @@ describe("OrganizationInvitationEmailService", () => {
       expiresAt: "2026-06-30T12:00:00.000Z",
       invitationId: "invitation-id",
       organizationId: "organization-id",
+      organizationName: "Stern Bat",
       roleCodes: ["architecte"],
       token: "secure-invitation-token",
     });
@@ -46,6 +47,7 @@ describe("OrganizationInvitationEmailService", () => {
     });
     expect(sentMessage.text).toContain("secure-invitation-token");
     expect(sentMessage.html).toContain("Accepter l'invitation");
+    expect(sentMessage.html).toContain("data:image/png;base64,");
   });
 
   it("returns a failed delivery result when the SMTP provider rejects the email", async () => {
@@ -58,6 +60,7 @@ describe("OrganizationInvitationEmailService", () => {
       expiresAt: "2026-06-30T12:00:00.000Z",
       invitationId: "invitation-id",
       organizationId: "organization-id",
+      organizationName: "Stern Bat",
       roleCodes: ["architecte"],
       token: "secure-invitation-token",
     });

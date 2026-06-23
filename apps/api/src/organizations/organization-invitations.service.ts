@@ -90,11 +90,17 @@ export class OrganizationInvitationsService {
     });
 
     if (result.status === "created") {
+      const organization = await this.organizationsService.getOrganization(
+        result.invitation.organizationId,
+        user,
+      );
+
       const deliveryResult = await this.invitationEmailService.sendInvitation({
         email: result.invitation.email,
         expiresAt: result.invitation.expiresAt,
         invitationId: result.invitation.id,
         organizationId: result.invitation.organizationId,
+        organizationName: organization.name,
         roleCodes: result.invitation.roleCodes,
         token,
       });
