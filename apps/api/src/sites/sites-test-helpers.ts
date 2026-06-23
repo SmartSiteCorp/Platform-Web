@@ -1,6 +1,14 @@
+import type { JsonObject } from "../database/database.types.js";
 import type { QueryResultRow } from "pg";
 
 import { DatabaseService } from "../database/database.service.js";
+
+export interface SiteAuditLogDatabaseRow extends QueryResultRow {
+  readonly organization_id: string;
+  readonly actor_user_id: string;
+  readonly action: string;
+  readonly metadata: JsonObject;
+}
 
 export interface SiteDatabaseRow extends QueryResultRow {
   readonly id: string;
@@ -15,6 +23,24 @@ export async function findPersistedSite(
 ): Promise<SiteDatabaseRow | null> {
   const result = await databaseService.query<SiteDatabaseRow>(
     `SELECT id, organization_id, name, status FROM sites WHERE id = $1`,
+    [siteId],
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function findSiteAuditLog(
+  databaseService: DatabaseService,
+  siteId: string,
+): Promise<SiteAuditLogDatabaseRow | null> {
+  const result = await databaseService.query<SiteAuditLogDatabaseRow>(
+    `
+      SELECT organization_id, actor_user_id, action, metadata
+      FROM organization_audit_logs
+      WHERE action = 'site.created' AND metadata->>'siteId' = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
     [siteId],
   );
 
