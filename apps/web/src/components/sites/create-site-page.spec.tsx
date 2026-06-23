@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RegisterResponseDto, SiteResponseDto } from "@/generated/api";
@@ -104,6 +104,66 @@ describe("CreateSitePage", () => {
     expect(
       screen.queryByRole("form", { name: "Formulaire création chantier" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("redirige vers le dashboard avec le parametre created apres creation reussie", async () => {
+    renderPage(createSuccessSubmitter());
+
+    fireEvent.change(screen.getByLabelText("Nom du chantier"), {
+      target: { value: "Chantier Redirection" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Créer le chantier" }));
+
+    await waitFor(() => {
+      expect(routerMock.push).toHaveBeenCalledWith(`/dashboard?site=${createdSite.id}&created=1`);
+    });
+  });
+
+  it("affiche l'erreur 403 quand l'utilisateur n'a pas le role requis", async () => {
+    const submitter: CreateSiteSubmitter = () =>
+      Promise.resolve({
+        message: "Vous n'avez pas le rôle requis pour créer un chantier.",
+        ok: false,
+      });
+
+    renderPage(submitter);
+
+    fireEvent.change(screen.getByLabelText("Nom du chantier"), {
+      target: { value: "Chantier Interdit" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Créer le chantier" }));
+
+    expect(
+      await screen.findByText("Vous n'avez pas le rôle requis pour créer un chantier."),
+    ).toBeInTheDocument();
+    expect(routerMock.push).not.toHaveBeenCalled();
+  });
+});
+
+const responsiveViewports: [string, number][] = [
+  ["mobile (390px)", 390],
+  ["tablette (768px)", 768],
+];
+
+describe("CreateSitePage - responsive", () => {
+  beforeEach(() => {
+    routerMock.push.mockClear();
+    routerMock.replace.mockClear();
+    sessionMock.isCheckingSession = false;
+    sessionMock.session = registeredAccount;
+  });
+
+  it.each(responsiveViewports)("affiche le formulaire en %s", (_label, width) => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+
+    renderPage(createSuccessSubmitter());
+
+    expect(screen.getByRole("heading", { name: "Créer un chantier" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Nom du chantier")).toBeInTheDocument();
+    expect(screen.getByLabelText("Adresse (optionnel)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Date de début (optionnel)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Durée estimée en jours (optionnel)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Créer le chantier" })).toBeInTheDocument();
   });
 });
 

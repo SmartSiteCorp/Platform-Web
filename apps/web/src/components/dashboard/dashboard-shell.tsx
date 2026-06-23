@@ -2,7 +2,10 @@
 
 import { Boxes, FileText, Loader2, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
+import { OrganizationFormStatusMessage } from "@/components/organization/organization-form-status-message";
 import { AppHeader } from "@/components/layout/app-header";
 import { isOrganizationAdmin } from "@/lib/auth-session";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +14,20 @@ import { Progress } from "@/components/ui/progress";
 import { useRequiredAuthSession } from "@/lib/use-auth-session";
 import { dashboardStats, dashboardTasks, moduleStats } from "./dashboard-data";
 import { StatCard } from "./stat-card";
+
+function SiteCreatedNotification() {
+  const searchParams = useSearchParams();
+
+  if (searchParams.get("created") !== "1") {
+    return null;
+  }
+
+  return (
+    <div className="mb-6">
+      <OrganizationFormStatusMessage message="Chantier créé avec succès." tone="success" />
+    </div>
+  );
+}
 
 export function DashboardShell() {
   const { isCheckingSession, session } = useRequiredAuthSession();
@@ -24,6 +41,9 @@ export function DashboardShell() {
       <AppHeader activeItem="dashboard" showSettingsLink={isOrganizationAdmin(session)} />
 
       <section className="container py-8">
+        <Suspense>
+          <SiteCreatedNotification />
+        </Suspense>
         <DashboardIntro />
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
