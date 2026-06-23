@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import {
   areOrganizationRoleCodesCompatible,
+  isAssignableOrganizationRoleCode,
   organizationRoleCompatibilityErrorMessage,
 } from "@smartsite/shared";
 
@@ -44,13 +45,6 @@ interface NormalizedAcceptInvitationInput {
   readonly lastName: string;
   readonly phone: string | null;
 }
-
-const assignableInvitationRoleCodes = new Set([
-  "architecte",
-  "chef_chantier",
-  "droniste",
-  "ouvrier",
-]);
 
 @Injectable()
 export class OrganizationInvitationsService {
@@ -192,7 +186,7 @@ export class OrganizationInvitationsService {
       throw new BadRequestException(["Un rôle ne doit pas être sélectionné plusieurs fois."]);
     }
 
-    if (roleCodes.some((roleCode) => !assignableInvitationRoleCodes.has(roleCode))) {
+    if (roleCodes.some((roleCode) => !isAssignableOrganizationRoleCode(roleCode))) {
       throw new BadRequestException(["Un ou plusieurs rôles sont invalides."]);
     }
 

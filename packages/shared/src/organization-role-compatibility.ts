@@ -8,6 +8,15 @@ export const organizationRoleCodeValues = [
 
 export type OrganizationRoleCode = (typeof organizationRoleCodeValues)[number];
 
+export const assignableOrganizationRoleCodeValues = [
+  "chef_chantier",
+  "ouvrier",
+  "architecte",
+  "droniste",
+] as const;
+
+export type AssignableOrganizationRoleCode = (typeof assignableOrganizationRoleCodeValues)[number];
+
 export const organizationRoleCompatibilityErrorMessage =
   "Cette combinaison de rôles n'est pas autorisée.";
 
@@ -26,6 +35,12 @@ const compatibleRoleCodeKeys = new Set<string>([
 
 export function isOrganizationRoleCode(roleCode: string): roleCode is OrganizationRoleCode {
   return organizationRoleCodeValues.some((knownRoleCode) => knownRoleCode === roleCode);
+}
+
+export function isAssignableOrganizationRoleCode(
+  roleCode: string,
+): roleCode is AssignableOrganizationRoleCode {
+  return assignableOrganizationRoleCodeValues.some((knownRoleCode) => knownRoleCode === roleCode);
 }
 
 export function areOrganizationRoleCodesCompatible(roleCodes: readonly string[]): boolean {
