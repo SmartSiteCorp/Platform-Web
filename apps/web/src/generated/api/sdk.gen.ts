@@ -3,7 +3,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerListOrganizationUsersData, OrganizationsControllerListOrganizationUsersErrors, OrganizationsControllerListOrganizationUsersResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses, OrganizationUserRolesControllerAddUserRoleData, OrganizationUserRolesControllerAddUserRoleErrors, OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerGetUserRolesData, OrganizationUserRolesControllerGetUserRolesErrors, OrganizationUserRolesControllerGetUserRolesResponses, OrganizationUserRolesControllerRemoveUserRoleData, OrganizationUserRolesControllerRemoveUserRoleErrors, OrganizationUserRolesControllerRemoveUserRoleResponses, OrganizationUserRolesControllerUpdateUserRolesData, OrganizationUserRolesControllerUpdateUserRolesErrors, OrganizationUserRolesControllerUpdateUserRolesResponses } from './types.gen';
+import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerListOrganizationUsersData, OrganizationsControllerListOrganizationUsersErrors, OrganizationsControllerListOrganizationUsersResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses, OrganizationUserRolesControllerAddUserRoleData, OrganizationUserRolesControllerAddUserRoleErrors, OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerGetUserRolesData, OrganizationUserRolesControllerGetUserRolesErrors, OrganizationUserRolesControllerGetUserRolesResponses, OrganizationUserRolesControllerRemoveUserRoleData, OrganizationUserRolesControllerRemoveUserRoleErrors, OrganizationUserRolesControllerRemoveUserRoleResponses, OrganizationUserRolesControllerUpdateUserRolesData, OrganizationUserRolesControllerUpdateUserRolesErrors, OrganizationUserRolesControllerUpdateUserRolesResponses, SitesControllerCreateSiteData, SitesControllerCreateSiteErrors, SitesControllerCreateSiteResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -110,4 +110,14 @@ export const organizationUserRolesControllerRemoveUserRole = <ThrowOnError exten
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/organizations/{organizationId}/users/{userId}/roles/{roleCode}',
     ...options
+});
+
+export const sitesControllerCreateSite = <ThrowOnError extends boolean = false>(options: Options<SitesControllerCreateSiteData, ThrowOnError>) => (options.client ?? client).post<SitesControllerCreateSiteResponses, SitesControllerCreateSiteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/sites',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
