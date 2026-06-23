@@ -6,6 +6,7 @@ import type { DatabaseExecutor, JsonObject } from "../database/database.types.js
 import type {
   OrganizationAuditLogInput,
   OrganizationDetails,
+  OrganizationUserSummary,
   OrganizationsRepositoryPort,
   OrganizationUserAccess,
   UpdateOrganizationInput,
@@ -25,6 +26,18 @@ interface OrganizationRow extends QueryResultRow {
 interface UserAccessRow extends QueryResultRow {
   readonly status: string;
   readonly role_codes: string[];
+}
+
+interface OrganizationUserRow extends QueryResultRow {
+  readonly id: string;
+  readonly organization_id: string;
+  readonly email: string;
+  readonly first_name: string;
+  readonly last_name: string;
+  readonly phone: string | null;
+  readonly status: string;
+  readonly role_codes: string[];
+  readonly created_at: Date;
 }
 
 @Injectable()
@@ -74,6 +87,35 @@ export class OrganizationsRepository implements OrganizationsRepositoryPort {
       roleCodes: row.role_codes,
       status: row.status,
     };
+  }
+
+  public async findUsersByOrganizationId(
+    organizationId: string,
+  ): Promise<readonly OrganizationUserSummary[]> {
+    const result = await this.databaseService.query<OrganizationUserRow>(
+      `
+        SELECT
+          users.id,
+          users.organization_id,
+          users.email,
+          users.first_name,
+          users.last_name,
+          users.phone,
+          users.status,
+          users.created_at,
+          COALESCE(array_agg(roles.code ORDER BY roles.code)
+            FILTER (WHERE roles.code IS NOT NULL), ARRAY[]::varchar[]) AS role_codes
+        FROM users
+        LEFT JOIN user_roles ON user_roles.user_id = users.id
+        LEFT JOIN roles ON roles.id = user_roles.role_id
+        WHERE users.organization_id = $1
+        GROUP BY users.id
+        ORDER BY lower(users.last_name), lower(users.first_name), lower(users.email), users.id
+      `,
+      [organizationId],
+    );
+
+    return result.rows.map((row) => this.mapOrganizationUser(row));
   }
 
   public async updateById(
@@ -203,6 +245,20 @@ export class OrganizationsRepository implements OrganizationsRepositoryPort {
       name: row.name,
       phone: row.phone,
       updatedAt: row.updated_at.toISOString(),
+    };
+  }
+
+  private mapOrganizationUser(row: OrganizationUserRow): OrganizationUserSummary {
+    return {
+      createdAt: row.created_at.toISOString(),
+      email: row.email,
+      firstName: row.first_name,
+      id: row.id,
+      lastName: row.last_name,
+      organizationId: row.organization_id,
+      phone: row.phone,
+      roleCodes: row.role_codes,
+      status: row.status,
     };
   }
 

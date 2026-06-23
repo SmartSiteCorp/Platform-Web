@@ -1,5 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsString, MaxLength } from "class-validator";
+import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+} from "class-validator";
 
 export const organizationUserRoleCodeMaxLength = 80;
 
@@ -13,6 +20,24 @@ export class AddOrganizationUserRoleRequestDto {
   @IsNotEmpty({ message: "Le rôle est obligatoire." })
   @MaxLength(organizationUserRoleCodeMaxLength, { message: "Le code rôle est trop long." })
   public readonly roleCode!: string;
+}
+
+export class UpdateOrganizationUserRolesRequestDto {
+  @ApiProperty({
+    example: ["chef_chantier", "droniste"],
+    isArray: true,
+    maxItems: 4,
+    type: String,
+  })
+  @IsArray({ message: "Les rôles doivent être une liste." })
+  @ArrayMaxSize(4, { message: "Trop de rôles sélectionnés." })
+  @ArrayUnique({ message: "Un rôle ne peut pas être sélectionné plusieurs fois." })
+  @IsString({ each: true, message: "Chaque rôle doit être une chaîne de caractères." })
+  @MaxLength(organizationUserRoleCodeMaxLength, {
+    each: true,
+    message: "Un code rôle est trop long.",
+  })
+  public readonly roleCodes!: readonly string[];
 }
 
 export class OrganizationUserRolesResponseDto {

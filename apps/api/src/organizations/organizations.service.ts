@@ -7,7 +7,11 @@ import {
 } from "@nestjs/common";
 
 import { organizationAdminRoleCode, type AccessTokenPayload } from "../auth/auth.types.js";
-import { UpdateOrganizationRequestDto, type OrganizationResponseDto } from "./organizations.dto.js";
+import {
+  UpdateOrganizationRequestDto,
+  type OrganizationResponseDto,
+  type OrganizationUsersResponseDto,
+} from "./organizations.dto.js";
 import { OrganizationsRepository } from "./organizations.repository.js";
 import type {
   OrganizationsRepositoryPort,
@@ -61,6 +65,18 @@ export class OrganizationsService {
     }
 
     return organization;
+  }
+
+  public async listOrganizationUsers(
+    organizationId: string,
+    user: AccessTokenPayload,
+  ): Promise<OrganizationUsersResponseDto> {
+    await this.assertCanManageOrganization(organizationId, user);
+
+    return {
+      organizationId,
+      users: await this.organizationsRepository.findUsersByOrganizationId(organizationId),
+    };
   }
 
   public async assertCanManageOrganization(

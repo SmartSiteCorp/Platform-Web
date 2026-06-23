@@ -12,7 +12,6 @@ import {
 } from "@/components/organization/created-organization-invitation-panel";
 import { OrganizationFormStatusMessage } from "@/components/organization/organization-form-status-message";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TextField } from "@/components/ui/text-field";
 import type { CreateOrganizationInvitationRequestDto } from "@/generated/api";
 import type { CreateOrganizationInvitationResult } from "@/lib/organization-invitations";
@@ -48,43 +47,38 @@ export function OrganizationInvitationForm({
   );
 
   return (
-    <Card className="border-2 border-border shadow-xl">
-      <CardHeader>
-        <CardTitle>Inviter un utilisateur</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form
-          aria-label="Formulaire invitation utilisateur"
-          className="space-y-5"
-          noValidate
-          onSubmit={(event) => void invitationForm.submitForm(event)}
-        >
-          <OrganizationFormStatusMessage message={invitationForm.apiError} tone="error" />
-          <OrganizationFormStatusMessage
-            message={invitationForm.confirmationMessage}
-            tone="success"
-          />
-          <InvitationFields
-            errors={invitationForm.errors}
-            register={invitationForm.register}
-            selectedRoleCodes={invitationForm.selectedRoleCodes}
-          />
-          <Button className="w-full sm:w-auto" disabled={invitationForm.isSubmitting} type="submit">
-            {invitationForm.isSubmitting ? (
-              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-            ) : (
-              <UserPlus aria-hidden="true" className="h-4 w-4" />
-            )}
-            Envoyer l'invitation
-          </Button>
-        </form>
-        <CreatedOrganizationInvitationPanel
-          copyMessage={invitationForm.copyMessage}
-          createdInvitation={invitationForm.createdInvitation}
-          onCopyInvitationLink={() => void invitationForm.copyInvitationLink()}
+    <>
+      <form
+        aria-label="Formulaire invitation utilisateur"
+        className="space-y-5"
+        noValidate
+        onSubmit={(event) => void invitationForm.submitForm(event)}
+      >
+        <OrganizationFormStatusMessage message={invitationForm.apiError} tone="error" />
+        <OrganizationFormStatusMessage
+          message={invitationForm.confirmationMessage}
+          tone="success"
         />
-      </CardContent>
-    </Card>
+        <InvitationFields
+          errors={invitationForm.errors}
+          register={invitationForm.register}
+          selectedRoleCodes={invitationForm.selectedRoleCodes}
+        />
+        <Button className="w-full sm:w-auto" disabled={invitationForm.isSubmitting} type="submit">
+          {invitationForm.isSubmitting ? (
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+          ) : (
+            <UserPlus aria-hidden="true" className="h-4 w-4" />
+          )}
+          Envoyer l'invitation
+        </Button>
+      </form>
+      <CreatedOrganizationInvitationPanel
+        copyMessage={invitationForm.copyMessage}
+        createdInvitation={invitationForm.createdInvitation}
+        onCopyInvitationLink={() => void invitationForm.copyInvitationLink()}
+      />
+    </>
   );
 }
 

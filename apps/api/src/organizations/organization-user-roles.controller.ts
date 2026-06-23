@@ -9,6 +9,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Req,
   UseGuards,
 } from "@nestjs/common";
@@ -31,6 +32,7 @@ import { ApiErrorResponseDto } from "../shared/http/api-error-response.dto.js";
 import {
   AddOrganizationUserRoleRequestDto,
   OrganizationUserRolesResponseDto,
+  UpdateOrganizationUserRolesRequestDto,
 } from "./organization-user-roles.dto.js";
 import { OrganizationUserRolesService } from "./organization-user-roles.service.js";
 
@@ -89,6 +91,37 @@ export class OrganizationUserRolesController {
     @Req() authenticatedRequest: AuthenticatedRequest,
   ): Promise<OrganizationUserRolesResponseDto> {
     return this.userRolesService.addUserRole(
+      organizationId,
+      userId,
+      request,
+      authenticatedRequest.auth,
+    );
+  }
+
+  @Put()
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({ name: "organizationId", type: String })
+  @ApiParam({ name: "userId", type: String })
+  @ApiBody({ type: UpdateOrganizationUserRolesRequestDto })
+  @ApiOkResponse({ type: OrganizationUserRolesResponseDto })
+  @ApiBadRequestResponse({ description: "Rôles invalides.", type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({
+    description: "Token JWT manquant ou invalide.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiForbiddenResponse({ description: "Accès organisation interdit.", type: ApiErrorResponseDto })
+  @ApiNotFoundResponse({
+    description: "Utilisateur organisation introuvable.",
+    type: ApiErrorResponseDto,
+  })
+  public updateUserRoles(
+    @Param("organizationId", new ParseUUIDPipe({ version: "4" })) organizationId: string,
+    @Param("userId", new ParseUUIDPipe({ version: "4" })) userId: string,
+    @Body(createHttpValidationPipe(UpdateOrganizationUserRolesRequestDto))
+    request: UpdateOrganizationUserRolesRequestDto,
+    @Req() authenticatedRequest: AuthenticatedRequest,
+  ): Promise<OrganizationUserRolesResponseDto> {
+    return this.userRolesService.updateUserRoles(
       organizationId,
       userId,
       request,

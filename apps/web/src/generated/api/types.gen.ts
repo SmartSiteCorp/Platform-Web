@@ -74,6 +74,23 @@ export type OrganizationResponseDto = {
     updatedAt: string;
 };
 
+export type OrganizationUserResponseDto = {
+    id: string;
+    organizationId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    status: string;
+    roleCodes: Array<string>;
+    createdAt: string;
+};
+
+export type OrganizationUsersResponseDto = {
+    organizationId: string;
+    users: Array<OrganizationUserResponseDto>;
+};
+
 export type UpdateOrganizationRequestDto = {
     name: string;
     email: string;
@@ -120,6 +137,10 @@ export type OrganizationUserRolesResponseDto = {
 
 export type AddOrganizationUserRoleRequestDto = {
     roleCode: string;
+};
+
+export type UpdateOrganizationUserRolesRequestDto = {
+    roleCodes: Array<string>;
 };
 
 export type AuthControllerRegisterData = {
@@ -259,6 +280,34 @@ export type OrganizationsControllerUpdateOrganizationResponses = {
 
 export type OrganizationsControllerUpdateOrganizationResponse = OrganizationsControllerUpdateOrganizationResponses[keyof OrganizationsControllerUpdateOrganizationResponses];
 
+export type OrganizationsControllerListOrganizationUsersData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/organizations/{id}/users';
+};
+
+export type OrganizationsControllerListOrganizationUsersErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Accès organisation interdit.
+     */
+    403: ApiErrorResponseDto;
+};
+
+export type OrganizationsControllerListOrganizationUsersError = OrganizationsControllerListOrganizationUsersErrors[keyof OrganizationsControllerListOrganizationUsersErrors];
+
+export type OrganizationsControllerListOrganizationUsersResponses = {
+    200: OrganizationUsersResponseDto;
+};
+
+export type OrganizationsControllerListOrganizationUsersResponse = OrganizationsControllerListOrganizationUsersResponses[keyof OrganizationsControllerListOrganizationUsersResponses];
+
 export type OrganizationInvitationsControllerCreateInvitationData = {
     body: CreateOrganizationInvitationRequestDto;
     path: {
@@ -394,6 +443,43 @@ export type OrganizationUserRolesControllerAddUserRoleResponses = {
 };
 
 export type OrganizationUserRolesControllerAddUserRoleResponse = OrganizationUserRolesControllerAddUserRoleResponses[keyof OrganizationUserRolesControllerAddUserRoleResponses];
+
+export type OrganizationUserRolesControllerUpdateUserRolesData = {
+    body: UpdateOrganizationUserRolesRequestDto;
+    path: {
+        userId: string;
+        organizationId: string;
+    };
+    query?: never;
+    url: '/api/organizations/{organizationId}/users/{userId}/roles';
+};
+
+export type OrganizationUserRolesControllerUpdateUserRolesErrors = {
+    /**
+     * Rôles invalides.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Accès organisation interdit.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Utilisateur organisation introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type OrganizationUserRolesControllerUpdateUserRolesError = OrganizationUserRolesControllerUpdateUserRolesErrors[keyof OrganizationUserRolesControllerUpdateUserRolesErrors];
+
+export type OrganizationUserRolesControllerUpdateUserRolesResponses = {
+    200: OrganizationUserRolesResponseDto;
+};
+
+export type OrganizationUserRolesControllerUpdateUserRolesResponse = OrganizationUserRolesControllerUpdateUserRolesResponses[keyof OrganizationUserRolesControllerUpdateUserRolesResponses];
 
 export type OrganizationUserRolesControllerRemoveUserRoleData = {
     body?: never;

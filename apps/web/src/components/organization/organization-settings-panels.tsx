@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { OrganizationResponseDto } from "@/generated/api";
 
 export function OrganizationSettingsIntro() {
@@ -13,7 +13,7 @@ export function OrganizationSettingsIntro() {
         <Badge tone="success">Organisation</Badge>
         <h1 className="mt-3 text-3xl font-bold tracking-normal">Paramètres entreprise</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Gérez les coordonnées utilisées pour l'espace SmartSite de votre entreprise.
+          Gérez les coordonnées, les utilisateurs et les rôles de votre organisation SmartSite.
         </p>
       </div>
       <Badge tone="muted">Admin organisation</Badge>
@@ -27,11 +27,11 @@ export function OrganizationSummaryPanel({
   readonly organization: OrganizationResponseDto;
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Aperçu organisation</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <section aria-labelledby="organization-summary-title" className="grid gap-3">
+      <h2 id="organization-summary-title" className="text-base font-semibold tracking-normal">
+        Aperçu organisation
+      </h2>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryLine icon={Building2} label="Entreprise" value={organization.name} />
         <SummaryLine icon={Mail} label="Email" value={organization.email ?? "Non renseigné"} />
         <SummaryLine icon={Phone} label="Téléphone" value={organization.phone ?? "Non renseigné"} />
@@ -40,8 +40,8 @@ export function OrganizationSummaryPanel({
           label="Adresse"
           value={organization.address ?? "Non renseignée"}
         />
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -96,7 +96,7 @@ function SummaryLine({
   readonly value: string;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-md border border-border bg-background p-3">
+    <div className="flex min-h-20 items-start gap-3 rounded-lg border-2 border-border bg-card p-4 shadow-sm">
       <Icon aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
       <div>
         <p className="text-xs font-semibold uppercase tracking-normal text-muted-foreground">

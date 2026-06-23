@@ -9,7 +9,10 @@ import {
 } from "@smartsite/shared";
 
 import type { AccessTokenPayload } from "../auth/auth.types.js";
-import { AddOrganizationUserRoleRequestDto } from "./organization-user-roles.dto.js";
+import {
+  AddOrganizationUserRoleRequestDto,
+  UpdateOrganizationUserRolesRequestDto,
+} from "./organization-user-roles.dto.js";
 import { OrganizationUserRolesRepository } from "./organization-user-roles.repository.js";
 import type {
   OrganizationUserRoles,
@@ -52,6 +55,26 @@ export class OrganizationUserRolesService {
     }
 
     return this.saveNextRoleCodes(organizationId, targetUserId, [...userRoles.roleCodes, roleCode]);
+  }
+
+  public async updateUserRoles(
+    organizationId: string,
+    targetUserId: string,
+    request: UpdateOrganizationUserRolesRequestDto,
+    user: AccessTokenPayload,
+  ): Promise<OrganizationUserRoles> {
+    await this.organizationsService.assertCanManageOrganization(organizationId, user);
+
+    const userRoles = await this.getExistingUserRoles(organizationId, targetUserId);
+    const preservedRoleCodes = userRoles.roleCodes.filter(
+      (roleCode) => !isAssignableOrganizationRoleCode(roleCode),
+    );
+    const nextRoleCodes = [
+      ...preservedRoleCodes,
+      ...this.normalizeAssignableRoleCodes(request.roleCodes),
+    ];
+
+    return this.saveNextRoleCodes(organizationId, targetUserId, nextRoleCodes);
   }
 
   public async removeUserRole(
@@ -117,6 +140,20 @@ export class OrganizationUserRolesService {
     }
 
     return roleCode;
+  }
+
+  private normalizeAssignableRoleCodes(
+    roleCodeValues: readonly string[],
+  ): AssignableOrganizationRoleCode[] {
+    const roleCodes = roleCodeValues.map((roleCodeValue) =>
+      this.normalizeAssignableRoleCode(roleCodeValue),
+    );
+
+    if (new Set(roleCodes).size !== roleCodes.length) {
+      throw new BadRequestException(["Un rôle ne peut pas être sélectionné plusieurs fois."]);
+    }
+
+    return roleCodes;
   }
 
   private assertRoleCombinationIsAllowed(roleCodes: readonly OrganizationRoleCode[]): void {

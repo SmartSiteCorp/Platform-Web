@@ -1,10 +1,17 @@
 import {
   areOrganizationRoleCodesCompatible,
   organizationRoleCompatibilityErrorMessage,
+  type AssignableOrganizationRoleCode,
 } from "@smartsite/shared";
 import { z } from "zod";
 
 import type { CreateOrganizationInvitationRequestDto } from "@/generated/api";
+import {
+  getOrganizationRoleLabel,
+  isOrganizationAssignableRoleDisabled,
+  organizationAssignableRoleOptions,
+  type OrganizationAssignableRoleOption,
+} from "./organization-role-options";
 
 const inviteableOrganizationRoleCodeValues = [
   "chef_chantier",
@@ -13,36 +20,10 @@ const inviteableOrganizationRoleCodeValues = [
   "droniste",
 ] as const;
 
-export type InviteableOrganizationRoleCode = (typeof inviteableOrganizationRoleCodeValues)[number];
+export type InviteableOrganizationRoleCode = AssignableOrganizationRoleCode;
+export type InviteableOrganizationRoleOption = OrganizationAssignableRoleOption;
 
-export interface InviteableOrganizationRoleOption {
-  readonly code: InviteableOrganizationRoleCode;
-  readonly description: string;
-  readonly label: string;
-}
-
-export const inviteableOrganizationRoleOptions: readonly InviteableOrganizationRoleOption[] = [
-  {
-    code: "chef_chantier",
-    description: "Planification, tâches et suivi d'avancement.",
-    label: "Chef de chantier",
-  },
-  {
-    code: "ouvrier",
-    description: "Consultation et validation des tâches terrain.",
-    label: "Ouvrier",
-  },
-  {
-    code: "architecte",
-    description: "Suivi BIM, annotations et documents techniques.",
-    label: "Architecte",
-  },
-  {
-    code: "droniste",
-    description: "Missions drone, captures et données terrain.",
-    label: "Droniste",
-  },
-];
+export const inviteableOrganizationRoleOptions = organizationAssignableRoleOptions;
 
 export const organizationInvitationFormSchema = z.object({
   email: z.string().trim().email("L'email doit être valide.").max(320, "L'email est trop long."),
@@ -72,19 +53,12 @@ export function buildCreateOrganizationInvitationRequest(
 }
 
 export function getInviteableRoleLabel(roleCode: string): string {
-  return (
-    inviteableOrganizationRoleOptions.find((roleOption) => roleOption.code === roleCode)?.label ??
-    roleCode
-  );
+  return getOrganizationRoleLabel(roleCode);
 }
 
 export function isInviteableOrganizationRoleDisabled(
   selectedRoleCodes: readonly InviteableOrganizationRoleCode[],
   roleCode: InviteableOrganizationRoleCode,
 ): boolean {
-  if (selectedRoleCodes.includes(roleCode)) {
-    return false;
-  }
-
-  return !areOrganizationRoleCodesCompatible([...selectedRoleCodes, roleCode]);
+  return isOrganizationAssignableRoleDisabled(selectedRoleCodes, roleCode);
 }

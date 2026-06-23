@@ -69,3 +69,40 @@ export class OrganizationResponseDto {
   @ApiProperty({ example: "2026-06-01T10:00:00.000Z", type: String })
   public readonly updatedAt!: string;
 }
+
+export class OrganizationUserResponseDto {
+  @ApiProperty({ example: "8f3de370-2782-4c32-8c3e-92d7f451d7c5", type: String })
+  public readonly id!: string;
+
+  @ApiProperty({ example: "3f66f364-24d1-4d84-bd8a-54de605cb281", type: String })
+  public readonly organizationId!: string;
+
+  @ApiProperty({ example: "ouvrier@smartsite.fr", type: String })
+  public readonly email!: string;
+
+  @ApiProperty({ example: "Armand", type: String })
+  public readonly firstName!: string;
+
+  @ApiProperty({ example: "Braud", type: String })
+  public readonly lastName!: string;
+
+  @ApiProperty({ example: "+33123456789", nullable: true, type: String })
+  public readonly phone!: string | null;
+
+  @ApiProperty({ example: "active", type: String })
+  public readonly status!: string;
+
+  @ApiProperty({ example: ["chef_chantier", "droniste"], isArray: true, type: String })
+  public readonly roleCodes!: readonly string[];
+
+  @ApiProperty({ example: "2026-06-01T10:00:00.000Z", type: String })
+  public readonly createdAt!: string;
+}
+
+export class OrganizationUsersResponseDto {
+  @ApiProperty({ example: "3f66f364-24d1-4d84-bd8a-54de605cb281", type: String })
+  public readonly organizationId!: string;
+
+  @ApiProperty({ isArray: true, type: OrganizationUserResponseDto })
+  public readonly users!: readonly OrganizationUserResponseDto[];
+}
