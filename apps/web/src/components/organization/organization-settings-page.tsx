@@ -60,7 +60,7 @@ export function OrganizationSettingsPage({
 
   return (
     <main className="min-h-screen bg-background">
-      <AppHeader activeItem="organization-settings" />
+      <AppHeader activeItem="organization-settings" showSettingsLink={true} />
       <section className="container py-8">
         <OrganizationSettingsIntro />
         <OrganizationSettingsContent

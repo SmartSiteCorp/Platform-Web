@@ -10,6 +10,7 @@ type AppHeaderItem = "dashboard" | "organization-settings";
 
 interface AppHeaderProps {
   readonly activeItem: AppHeaderItem;
+  readonly showSettingsLink?: boolean;
 }
 
 interface HeaderNavItem {
@@ -27,13 +28,13 @@ const headerNavItems: readonly HeaderNavItem[] = [
   },
 ];
 
-export function AppHeader({ activeItem }: AppHeaderProps) {
+export function AppHeader({ activeItem, showSettingsLink = false }: AppHeaderProps) {
   return (
     <header className="border-b border-border bg-accent text-accent-foreground">
       <div className="container flex min-h-20 flex-col justify-center gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
         <HeaderBrand />
         <div className="flex items-center justify-between gap-3 sm:justify-end">
-          <HeaderNav activeItem={activeItem} />
+          <HeaderNav activeItem={activeItem} showSettingsLink={showSettingsLink} />
           <button
             aria-label="Notifications"
             className="rounded-md border border-white/20 p-3 text-accent-foreground transition-colors hover:bg-white/10"
@@ -62,10 +63,20 @@ function HeaderBrand() {
   );
 }
 
-function HeaderNav({ activeItem }: AppHeaderProps) {
+function HeaderNav({
+  activeItem,
+  showSettingsLink,
+}: {
+  readonly activeItem: AppHeaderItem;
+  readonly showSettingsLink: boolean;
+}) {
+  const visibleItems = headerNavItems.filter(
+    (item) => item.id !== "organization-settings" || showSettingsLink,
+  );
+
   return (
     <nav aria-label="Navigation principale" className="flex items-center gap-2">
-      {headerNavItems.map((item) => (
+      {visibleItems.map((item) => (
         <HeaderNavLink activeItem={activeItem} item={item} key={item.id} />
       ))}
     </nav>

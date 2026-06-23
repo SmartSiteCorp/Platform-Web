@@ -1,5 +1,7 @@
 import type { OrganizationRoleCode } from "@smartsite/shared";
 
+export const organizationUserRolesUpdatedAuditAction = "organization.user_roles_updated";
+
 export interface OrganizationUserRoles {
   readonly organizationId: string;
   readonly userId: string;
@@ -7,6 +9,7 @@ export interface OrganizationUserRoles {
 }
 
 export interface ReplaceOrganizationUserRolesInput {
+  readonly actorUserId: string;
   readonly organizationId: string;
   readonly userId: string;
   readonly roleCodes: readonly OrganizationRoleCode[];

@@ -288,4 +288,24 @@ describe("OrganizationSettingsPage - session", () => {
     });
     expect(readAuthSession()).toBeNull();
   });
+
+  it("redirige un utilisateur sans role admin vers le dashboard", async () => {
+    saveAuthSession({
+      ...registeredAccount,
+      user: { ...registeredAccount.user, roles: ["ouvrier"] },
+    });
+
+    let loadCallCount = 0;
+    const loadOrganizationDetails = () => {
+      loadCallCount += 1;
+      return Promise.resolve({ ok: true as const, organization });
+    };
+
+    renderOrganizationSettingsPageWithLoader(loadOrganizationDetails);
+
+    await waitFor(() => {
+      expectRouterRedirectTo("/dashboard");
+    });
+    expect(loadCallCount).toBe(0);
+  });
 });

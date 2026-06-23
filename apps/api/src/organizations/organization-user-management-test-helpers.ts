@@ -3,6 +3,16 @@ import type { QueryResultRow } from "pg";
 import type { OrganizationRoleCode } from "@smartsite/shared";
 
 import { DatabaseService } from "../database/database.service.js";
+import type { JsonObject } from "../database/database.types.js";
+import { organizationUserRolesUpdatedAuditAction } from "./organization-user-roles.types.js";
+
+export interface UserRolesAuditLogDatabaseRow extends QueryResultRow {
+  readonly action: string;
+  readonly actor_user_id: string;
+  readonly changed_fields: string[];
+  readonly metadata: JsonObject;
+  readonly organization_id: string;
+}
 
 export interface CreatedOrganizationUser {
   readonly id: string;
@@ -54,6 +64,30 @@ export async function createOrganizationUser(
   return {
     id: user.id,
   };
+}
+
+export async function findLatestUserRolesAuditLog(
+  databaseService: DatabaseService,
+  organizationId: string,
+  targetUserId: string,
+): Promise<UserRolesAuditLogDatabaseRow> {
+  const result = await databaseService.query<UserRolesAuditLogDatabaseRow>(
+    `
+      SELECT organization_id, actor_user_id, action, changed_fields, metadata
+      FROM organization_audit_logs
+      WHERE action = $1 AND organization_id = $2 AND metadata->>'targetUserId' = $3
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [organizationUserRolesUpdatedAuditAction, organizationId, targetUserId],
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error(`User roles audit log not found for user ${targetUserId}.`);
+  }
+
+  return row;
 }
 
 export async function findPersistedRoleCodes(

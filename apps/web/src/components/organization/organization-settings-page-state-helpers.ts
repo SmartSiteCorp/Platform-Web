@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 
 import type { OrganizationResponseDto, RegisterResponseDto } from "@/generated/api";
-import { clearAuthSession, readAuthSession } from "@/lib/auth-session";
+import { clearAuthSession, isOrganizationAdmin, readAuthSession } from "@/lib/auth-session";
 import type { OrganizationSettingsResult } from "@/lib/organization-settings";
 
 export type OrganizationSettingsLoader = (
@@ -29,12 +29,14 @@ export type OrganizationSettingsStateSetter = Dispatch<
 
 interface InitialOrganizationStateOptions {
   readonly loadOrganizationDetails: OrganizationSettingsLoader;
+  readonly redirectToDashboard: () => void;
   readonly redirectToLogin: () => void;
   readonly setPageState: OrganizationSettingsStateSetter;
 }
 
 export function loadInitialOrganizationState({
   loadOrganizationDetails,
+  redirectToDashboard,
   redirectToLogin,
   setPageState,
 }: InitialOrganizationStateOptions): (() => void) | undefined {
@@ -44,6 +46,13 @@ export function loadInitialOrganizationState({
   if (!storedSession) {
     setPageState({ status: "missing-session" });
     redirectToLogin();
+    return undefined;
+  }
+
+  // Vérification anticipée du rôle admin avant tout appel API.
+  if (!isOrganizationAdmin(storedSession)) {
+    setPageState({ status: "missing-session" });
+    redirectToDashboard();
     return undefined;
   }
 

@@ -54,7 +54,12 @@ export class OrganizationUserRolesService {
       return userRoles;
     }
 
-    return this.saveNextRoleCodes(organizationId, targetUserId, [...userRoles.roleCodes, roleCode]);
+    return this.saveNextRoleCodes(
+      organizationId,
+      targetUserId,
+      [...userRoles.roleCodes, roleCode],
+      user.sub,
+    );
   }
 
   public async updateUserRoles(
@@ -74,7 +79,7 @@ export class OrganizationUserRolesService {
       ...this.normalizeAssignableRoleCodes(request.roleCodes),
     ];
 
-    return this.saveNextRoleCodes(organizationId, targetUserId, nextRoleCodes);
+    return this.saveNextRoleCodes(organizationId, targetUserId, nextRoleCodes, user.sub);
   }
 
   public async removeUserRole(
@@ -96,6 +101,7 @@ export class OrganizationUserRolesService {
       organizationId,
       targetUserId,
       userRoles.roleCodes.filter((currentRoleCode) => currentRoleCode !== roleCode),
+      user.sub,
     );
   }
 
@@ -116,10 +122,12 @@ export class OrganizationUserRolesService {
     organizationId: string,
     targetUserId: string,
     nextRoleCodes: readonly OrganizationRoleCode[],
+    actorUserId: string,
   ): Promise<OrganizationUserRoles> {
     this.assertRoleCombinationIsAllowed(nextRoleCodes);
 
     const updatedUserRoles = await this.userRolesRepository.replaceUserRoles({
+      actorUserId,
       organizationId,
       roleCodes: nextRoleCodes,
       userId: targetUserId,

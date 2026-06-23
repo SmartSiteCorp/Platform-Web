@@ -11,6 +11,7 @@ import { AppModule } from "../app.module.js";
 import { DatabaseService } from "../database/database.service.js";
 import {
   createOrganizationUser,
+  findLatestUserRolesAuditLog,
   findPersistedRoleCodes,
 } from "./organization-user-management-test-helpers.js";
 import { deleteCreatedOrganizations } from "./organization-invitations-test-helpers.js";
@@ -148,6 +149,36 @@ async function createRegisteredAccount(): Promise<RegisteredTestAccount> {
     response: responseBody,
   };
 }
+
+it("journalise le remplacement de roles dans organization_audit_logs", async () => {
+  const account = await createRegisteredAccount();
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "chef_chantier",
+    "droniste",
+  ]);
+
+  await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({ roleCodes: ["architecte"] })
+    .expect(200);
+
+  const auditLog = await findLatestUserRolesAuditLog(
+    databaseService,
+    account.response.organization.id,
+    user.id,
+  );
+
+  expect(auditLog.action).toBe("organization.user_roles_updated");
+  expect(auditLog.actor_user_id).toBe(account.response.user.id);
+  expect(auditLog.organization_id).toBe(account.response.organization.id);
+  expect(auditLog.changed_fields).toStrictEqual(["roleCodes"]);
+  expect(auditLog.metadata).toStrictEqual({
+    nextRoleCodes: ["architecte"],
+    previousRoleCodes: ["chef_chantier", "droniste"],
+    targetUserId: user.id,
+  });
+});
 
 function parseUserRolesResponse(response: Response): OrganizationUserRolesResponseDto {
   return JSON.parse(response.text) as OrganizationUserRolesResponseDto;
