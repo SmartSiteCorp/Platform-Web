@@ -6,6 +6,7 @@ import { DatabaseModule } from "./database/database.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { OrganizationsModule } from "./organizations/organizations.module.js";
 import { getEnvironmentFilePaths } from "./shared/config/environment.js";
+import { SitesModule } from "./sites/sites.module.js";
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { getEnvironmentFilePaths } from "./shared/config/environment.js";
     DatabaseModule,
     HealthModule,
     OrganizationsModule,
+    SitesModule,
   ],
 })
 export class AppModule {}

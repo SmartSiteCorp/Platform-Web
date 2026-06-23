@@ -22,6 +22,7 @@ import { SmtpEmailClientService } from "./smtp-email-client.service.js";
     OrganizationInvitationsController,
     OrganizationUserRolesController,
   ],
+  exports: [OrganizationsService],
   imports: [AuthModule, DatabaseModule],
   providers: [
     OrganizationInvitationAcceptanceRepository,
