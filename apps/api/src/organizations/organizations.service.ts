@@ -83,6 +83,14 @@ export class OrganizationsService {
     organizationId: string,
     user: AccessTokenPayload,
   ): Promise<void> {
+    await this.assertUserHasAnyRole(organizationId, user, [organizationAdminRoleCode]);
+  }
+
+  public async assertUserHasAnyRole(
+    organizationId: string,
+    user: AccessTokenPayload,
+    allowedRoleCodes: readonly string[],
+  ): Promise<void> {
     if (user.organizationId !== organizationId) {
       throw new ForbiddenException(["Vous n'avez pas accès à cette organisation."]);
     }
@@ -94,8 +102,10 @@ export class OrganizationsService {
     }
 
     // Les rôles sont relus en base pour appliquer les changements immédiatement.
-    if (!access.roleCodes.includes(organizationAdminRoleCode)) {
-      throw new ForbiddenException(["Le rôle administrateur organisation est requis."]);
+    const hasRole = allowedRoleCodes.some((code) => access.roleCodes.includes(code));
+
+    if (!hasRole) {
+      throw new ForbiddenException(["Vous n'avez pas le rôle requis pour cette action."]);
     }
   }
 

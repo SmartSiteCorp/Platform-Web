@@ -196,6 +196,10 @@ export async function deleteCreatedOrganizations(
     return;
   }
 
+  // Les sites référencent les users avec RESTRICT : suppression avant les users.
+  await databaseService.query("DELETE FROM sites WHERE organization_id = ANY($1::uuid[])", [
+    organizationIds,
+  ]);
   await databaseService.query("DELETE FROM users WHERE organization_id = ANY($1::uuid[])", [
     organizationIds,
   ]);

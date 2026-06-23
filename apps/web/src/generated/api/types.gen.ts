@@ -143,6 +143,26 @@ export type UpdateOrganizationUserRolesRequestDto = {
     roleCodes: Array<string>;
 };
 
+export type CreateSiteRequestDto = {
+    name: string;
+    address?: string | null;
+    startDate?: string | null;
+    estimatedDurationDays?: number | null;
+};
+
+export type SiteResponseDto = {
+    id: string;
+    organizationId: string;
+    name: string;
+    address: string | null;
+    startDate: string | null;
+    estimatedDurationDays: number | null;
+    status: string;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
 export type AuthControllerRegisterData = {
     body: RegisterRequestDto;
     path?: never;
@@ -518,3 +538,36 @@ export type OrganizationUserRolesControllerRemoveUserRoleResponses = {
 };
 
 export type OrganizationUserRolesControllerRemoveUserRoleResponse = OrganizationUserRolesControllerRemoveUserRoleResponses[keyof OrganizationUserRolesControllerRemoveUserRoleResponses];
+
+export type SitesControllerCreateSiteData = {
+    body: CreateSiteRequestDto;
+    path?: never;
+    query?: never;
+    url: '/api/sites';
+};
+
+export type SitesControllerCreateSiteErrors = {
+    /**
+     * Données chantier invalides.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur requis.
+     */
+    403: ApiErrorResponseDto;
+};
+
+export type SitesControllerCreateSiteError = SitesControllerCreateSiteErrors[keyof SitesControllerCreateSiteErrors];
+
+export type SitesControllerCreateSiteResponses = {
+    /**
+     * Chantier créé avec succès.
+     */
+    201: SiteResponseDto;
+};
+
+export type SitesControllerCreateSiteResponse = SitesControllerCreateSiteResponses[keyof SitesControllerCreateSiteResponses];
