@@ -7,6 +7,7 @@ import type {
   OrganizationDetails,
   OrganizationsRepositoryPort,
   OrganizationUserAccess,
+  OrganizationUserSummary,
   UpdateOrganizationInput,
 } from "./organizations.types.js";
 
@@ -18,6 +19,19 @@ class FakeOrganizationsRepository implements OrganizationsRepositoryPort {
   public organization: OrganizationDetails | null = createOrganization();
   public updatedByUserId: string | null = null;
   public updatedInput: UpdateOrganizationInput | null = null;
+  public users: readonly OrganizationUserSummary[] = [
+    {
+      createdAt: "2026-06-01T10:00:00.000Z",
+      email: "admin@smartsite.fr",
+      firstName: "Andreea",
+      id: "user-id",
+      lastName: "Rauta",
+      organizationId: "organization-id",
+      phone: null,
+      roleCodes: ["administrateur"],
+      status: "active",
+    },
+  ];
 
   public findById(): Promise<OrganizationDetails | null> {
     return Promise.resolve(this.organization);
@@ -25,6 +39,10 @@ class FakeOrganizationsRepository implements OrganizationsRepositoryPort {
 
   public findUserAccess(): Promise<OrganizationUserAccess | null> {
     return Promise.resolve(this.access);
+  }
+
+  public findUsersByOrganizationId(): Promise<readonly OrganizationUserSummary[]> {
+    return Promise.resolve(this.users);
   }
 
   public updateById(
@@ -127,6 +145,24 @@ describe("OrganizationsService", () => {
     await expect(service.getOrganization("organization-id", createUser())).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+});
+
+describe("OrganizationsService users", () => {
+  it("returns organization users for an active organization admin", async () => {
+    const { service } = createService();
+
+    await expect(
+      service.listOrganizationUsers("organization-id", createUser()),
+    ).resolves.toStrictEqual({
+      organizationId: "organization-id",
+      users: [
+        expect.objectContaining({
+          email: "admin@smartsite.fr",
+          roleCodes: ["administrateur"],
+        }),
+      ],
+    });
   });
 });
 

@@ -3,7 +3,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses, OrganizationUserRolesControllerAddUserRoleData, OrganizationUserRolesControllerAddUserRoleErrors, OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerGetUserRolesData, OrganizationUserRolesControllerGetUserRolesErrors, OrganizationUserRolesControllerGetUserRolesResponses, OrganizationUserRolesControllerRemoveUserRoleData, OrganizationUserRolesControllerRemoveUserRoleErrors, OrganizationUserRolesControllerRemoveUserRoleResponses } from './types.gen';
+import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerListOrganizationUsersData, OrganizationsControllerListOrganizationUsersErrors, OrganizationsControllerListOrganizationUsersResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses, OrganizationUserRolesControllerAddUserRoleData, OrganizationUserRolesControllerAddUserRoleErrors, OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerGetUserRolesData, OrganizationUserRolesControllerGetUserRolesErrors, OrganizationUserRolesControllerGetUserRolesResponses, OrganizationUserRolesControllerRemoveUserRoleData, OrganizationUserRolesControllerRemoveUserRoleErrors, OrganizationUserRolesControllerRemoveUserRoleResponses, OrganizationUserRolesControllerUpdateUserRolesData, OrganizationUserRolesControllerUpdateUserRolesErrors, OrganizationUserRolesControllerUpdateUserRolesResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -55,6 +55,12 @@ export const organizationsControllerUpdateOrganization = <ThrowOnError extends b
     }
 });
 
+export const organizationsControllerListOrganizationUsers = <ThrowOnError extends boolean = false>(options: Options<OrganizationsControllerListOrganizationUsersData, ThrowOnError>) => (options.client ?? client).get<OrganizationsControllerListOrganizationUsersResponses, OrganizationsControllerListOrganizationUsersErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/organizations/{id}/users',
+    ...options
+});
+
 export const organizationInvitationsControllerCreateInvitation = <ThrowOnError extends boolean = false>(options: Options<OrganizationInvitationsControllerCreateInvitationData, ThrowOnError>) => (options.client ?? client).post<OrganizationInvitationsControllerCreateInvitationResponses, OrganizationInvitationsControllerCreateInvitationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/organizations/{id}/invitations',
@@ -81,6 +87,16 @@ export const organizationUserRolesControllerGetUserRoles = <ThrowOnError extends
 });
 
 export const organizationUserRolesControllerAddUserRole = <ThrowOnError extends boolean = false>(options: Options<OrganizationUserRolesControllerAddUserRoleData, ThrowOnError>) => (options.client ?? client).post<OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerAddUserRoleErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/organizations/{organizationId}/users/{userId}/roles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const organizationUserRolesControllerUpdateUserRoles = <ThrowOnError extends boolean = false>(options: Options<OrganizationUserRolesControllerUpdateUserRolesData, ThrowOnError>) => (options.client ?? client).put<OrganizationUserRolesControllerUpdateUserRolesResponses, OrganizationUserRolesControllerUpdateUserRolesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/organizations/{organizationId}/users/{userId}/roles',
     ...options,

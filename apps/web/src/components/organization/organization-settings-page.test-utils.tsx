@@ -5,18 +5,26 @@ import type {
   CreateOrganizationInvitationRequestDto,
   OrganizationInvitationResponseDto,
   OrganizationResponseDto,
+  OrganizationUserResponseDto,
   RegisterResponseDto,
+  UpdateOrganizationUserRolesRequestDto,
   UpdateOrganizationRequestDto,
 } from "@/generated/api";
 import { saveAuthSession } from "@/lib/auth-session";
 import type { CreateOrganizationInvitationResult } from "@/lib/organization-invitations";
 import type { OrganizationSettingsResult } from "@/lib/organization-settings";
+import type {
+  LoadOrganizationUsersResult,
+  UpdateOrganizationUserRolesResult,
+} from "@/lib/organization-user-roles";
 import { createTestAccessToken } from "@/test/create-test-access-token";
 import {
   OrganizationSettingsPage,
   type OrganizationInvitationCreator,
   type OrganizationSettingsLoader,
   type OrganizationSettingsSubmitter,
+  type OrganizationUserRolesUpdater,
+  type OrganizationUsersFetcher,
 } from "./organization-settings-page";
 
 const routerMock = vi.hoisted(() => ({
@@ -37,10 +45,18 @@ interface SubmittedOrganizationInvitation {
   readonly request: CreateOrganizationInvitationRequestDto;
 }
 
+interface SubmittedOrganizationUserRoles {
+  readonly organizationId: string;
+  readonly request: UpdateOrganizationUserRolesRequestDto;
+  readonly userId: string;
+}
+
 interface RenderReadyPageOptions {
   readonly loadResult?: OrganizationSettingsResult;
+  readonly loadUsersResult?: LoadOrganizationUsersResult;
   readonly submitInvitationResult?: CreateOrganizationInvitationResult;
   readonly submitResult?: OrganizationSettingsResult;
+  readonly submitUserRolesResult?: UpdateOrganizationUserRolesResult;
 }
 
 export const responsiveViewports: readonly [string, number][] = [
@@ -99,6 +115,31 @@ const createdInvitation: OrganizationInvitationResponseDto = {
   token: "invitation-token",
 };
 
+export const organizationUsers: readonly OrganizationUserResponseDto[] = [
+  {
+    createdAt: "2026-06-01T10:00:00.000Z",
+    email: registeredAccount.user.email,
+    firstName: registeredAccount.user.firstName,
+    id: registeredAccount.user.id,
+    lastName: registeredAccount.user.lastName,
+    organizationId: registeredAccount.organization.id,
+    phone: null,
+    roleCodes: ["administrateur"],
+    status: "active",
+  },
+  {
+    createdAt: "2026-06-01T11:00:00.000Z",
+    email: "armand.braud@smartsite.fr",
+    firstName: "Armand",
+    id: "organization-user-id",
+    lastName: "Braud",
+    organizationId: registeredAccount.organization.id,
+    phone: "+33111111111",
+    roleCodes: ["ouvrier"],
+    status: "active",
+  },
+];
+
 export function resetOrganizationSettingsPageTest(): void {
   routerMock.replace.mockClear();
   setViewportWidth(1280);
@@ -121,17 +162,23 @@ export function renderDefaultOrganizationSettingsPage(): void {
 
 export function renderReadyPage({
   loadResult = { ok: true, organization },
+  loadUsersResult = { ok: true, users: organizationUsers },
   submitInvitationResult = { invitation: createdInvitation, ok: true },
   submitResult = { ok: true, organization: updatedOrganization },
+  submitUserRolesResult,
 }: RenderReadyPageOptions = {}): {
   readonly getSubmittedInvitation: () => SubmittedOrganizationInvitation | null;
   readonly getSubmittedUpdate: () => SubmittedOrganizationUpdate | null;
+  readonly getSubmittedUserRoles: () => SubmittedOrganizationUserRoles | null;
 } {
   let submittedInvitation: SubmittedOrganizationInvitation | null = null;
   let submittedUpdate: SubmittedOrganizationUpdate | null = null;
+  let submittedUserRoles: SubmittedOrganizationUserRoles | null = null;
   saveAuthSession(registeredAccount);
 
   const loadOrganizationDetails: OrganizationSettingsLoader = () => Promise.resolve(loadResult);
+  const loadOrganizationUsersList: OrganizationUsersFetcher = () =>
+    Promise.resolve(loadUsersResult);
   const submitOrganizationSettings: OrganizationSettingsSubmitter = (
     _session,
     organizationId,
@@ -148,18 +195,40 @@ export function renderReadyPage({
     submittedInvitation = { organizationId, request };
     return Promise.resolve(submitInvitationResult);
   };
+  const submitOrganizationUserRoles: OrganizationUserRolesUpdater = (
+    _session,
+    organizationId,
+    userId,
+    request,
+  ) => {
+    submittedUserRoles = { organizationId, request, userId };
+
+    return Promise.resolve(
+      submitUserRolesResult ?? {
+        ok: true,
+        userRoles: {
+          organizationId,
+          roleCodes: request.roleCodes,
+          userId,
+        },
+      },
+    );
+  };
 
   render(
     <OrganizationSettingsPage
+      loadOrganizationUsersList={loadOrganizationUsersList}
       loadOrganizationDetails={loadOrganizationDetails}
       submitOrganizationInvitation={submitOrganizationInvitation}
       submitOrganizationSettings={submitOrganizationSettings}
+      submitOrganizationUserRoles={submitOrganizationUserRoles}
     />,
   );
 
   return {
     getSubmittedInvitation: () => submittedInvitation,
     getSubmittedUpdate: () => submittedUpdate,
+    getSubmittedUserRoles: () => submittedUserRoles,
   };
 }
 
@@ -184,10 +253,17 @@ export function getOrganizationSettingsForm(): HTMLElement {
   return screen.getByRole("form", { name: "Formulaire informations entreprise" });
 }
 
-export function fillInvitationForm(): void {
-  const invitationForm = screen.getByRole("form", {
+export async function fillInvitationForm(): Promise<void> {
+  let invitationForm = screen.queryByRole("form", {
     name: "Formulaire invitation utilisateur",
   });
+
+  if (!invitationForm) {
+    fireEvent.click(await screen.findByRole("button", { name: "Inviter un utilisateur" }));
+    invitationForm = await screen.findByRole("form", {
+      name: "Formulaire invitation utilisateur",
+    });
+  }
 
   fireEvent.change(within(invitationForm).getByLabelText("Email"), {
     target: { value: " OUVRIER@SMARTSITE.FR " },

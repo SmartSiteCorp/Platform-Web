@@ -25,7 +25,11 @@ import type { AuthenticatedRequest } from "../auth/authenticated-request.js";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard.js";
 import { createHttpValidationPipe } from "../app-http.js";
 import { ApiErrorResponseDto } from "../shared/http/api-error-response.dto.js";
-import { OrganizationResponseDto, UpdateOrganizationRequestDto } from "./organizations.dto.js";
+import {
+  OrganizationResponseDto,
+  OrganizationUsersResponseDto,
+  UpdateOrganizationRequestDto,
+} from "./organizations.dto.js";
 import { OrganizationsService } from "./organizations.service.js";
 
 @ApiBearerAuth()
@@ -51,6 +55,21 @@ export class OrganizationsController {
     @Req() request: AuthenticatedRequest,
   ): Promise<OrganizationResponseDto> {
     return this.organizationsService.getOrganization(organizationId, request.auth);
+  }
+
+  @Get(":id/users")
+  @ApiParam({ name: "id", type: String })
+  @ApiOkResponse({ type: OrganizationUsersResponseDto })
+  @ApiUnauthorizedResponse({
+    description: "Token JWT manquant ou invalide.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiForbiddenResponse({ description: "Accès organisation interdit.", type: ApiErrorResponseDto })
+  public listOrganizationUsers(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) organizationId: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<OrganizationUsersResponseDto> {
+    return this.organizationsService.listOrganizationUsers(organizationId, request.auth);
   }
 
   @Put(":id")

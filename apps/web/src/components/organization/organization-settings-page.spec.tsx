@@ -32,11 +32,12 @@ describe("OrganizationSettingsPage - affichage", () => {
     expect(screen.getByDisplayValue("12 rue des Chantiers, Paris")).toBeInTheDocument();
     expect(screen.getByText("Aperçu organisation")).toBeInTheDocument();
     expect(
-      screen.getByRole("form", { name: "Formulaire invitation utilisateur" }),
+      screen.queryByRole("form", { name: "Formulaire invitation utilisateur" }),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Inviter un utilisateur" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Espace responsive paramètres")).toHaveClass(
-      "lg:grid-cols-[1fr_22rem]",
-    );
+    expect(screen.getByLabelText("Espace responsive paramètres")).toHaveClass("grid", "gap-6");
   });
 
   it.each(responsiveViewports)("garde la page utilisable en %s", async (_label, width) => {
@@ -52,11 +53,7 @@ describe("OrganizationSettingsPage - affichage", () => {
     expect(within(organizationForm).getByLabelText("Adresse")).toBeInTheDocument();
     expect(screen.getByText("Aperçu organisation")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enregistrer" })).toBeEnabled();
-    expect(screen.getByLabelText("Espace responsive paramètres")).toHaveClass(
-      "grid",
-      "gap-6",
-      "lg:grid-cols-[1fr_22rem]",
-    );
+    expect(screen.getByLabelText("Espace responsive paramètres")).toHaveClass("grid", "gap-6");
   });
 });
 
@@ -121,7 +118,7 @@ describe("OrganizationSettingsPage - invitations", () => {
     const { getSubmittedInvitation } = renderReadyPage();
 
     await screen.findByDisplayValue("Stern Tech");
-    fillInvitationForm();
+    await fillInvitationForm();
     fireEvent.click(screen.getByRole("button", { name: "Envoyer l'invitation" }));
 
     await waitFor(() => {
@@ -151,7 +148,7 @@ describe("OrganizationSettingsPage - invitations", () => {
     });
 
     await screen.findByDisplayValue("Stern Tech");
-    fillInvitationForm();
+    await fillInvitationForm();
     fireEvent.click(screen.getByRole("button", { name: "Envoyer l'invitation" }));
 
     await waitFor(() => {
@@ -165,6 +162,98 @@ describe("OrganizationSettingsPage - invitations", () => {
       },
     });
     expect(readAuthSession()).toBeNull();
+  });
+});
+
+describe("OrganizationSettingsPage - roles utilisateurs", () => {
+  beforeEach(() => {
+    resetOrganizationSettingsPageTest();
+  });
+
+  it("affiche les utilisateurs de l'organisation avec leurs roles", async () => {
+    renderReadyPage();
+
+    const userRolePanel = await screen.findByRole("region", { name: "Rôles de Armand Braud" });
+
+    expect(screen.getByText("Gestion des rôles utilisateurs")).toBeInTheDocument();
+    expect(within(userRolePanel).getByText("armand.braud@smartsite.fr")).toBeInTheDocument();
+    expect(within(userRolePanel).getByRole("checkbox", { name: /Ouvrier/ })).toBeChecked();
+    expect(within(userRolePanel).getByRole("checkbox", { name: /Droniste/ })).toBeDisabled();
+  });
+
+  it("filtre les utilisateurs par nom prenom et par role", async () => {
+    renderReadyPage();
+
+    await screen.findByRole("region", { name: "Rôles de Armand Braud" });
+
+    fireEvent.change(screen.getByLabelText("Nom ou prénom"), {
+      target: { value: "Andreea" },
+    });
+
+    expect(screen.getByRole("region", { name: "Rôles de Andreea Rauta" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Rôles de Armand Braud" })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Nom ou prénom"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByLabelText("Filtrer par rôle"), {
+      target: { value: "ouvrier" },
+    });
+
+    expect(screen.getByRole("region", { name: "Rôles de Armand Braud" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Rôles de Andreea Rauta" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("met a jour les roles selectionnes sans recharger la page", async () => {
+    const { getSubmittedUserRoles } = renderReadyPage();
+
+    const userRolePanel = await screen.findByRole("region", { name: "Rôles de Armand Braud" });
+
+    fireEvent.click(within(userRolePanel).getByRole("checkbox", { name: /Ouvrier/ }));
+    expect(
+      await within(userRolePanel).findByText("Sélectionnez au moins un rôle."),
+    ).toBeInTheDocument();
+    fireEvent.click(within(userRolePanel).getByRole("checkbox", { name: /Architecte/ }));
+    fireEvent.click(
+      within(userRolePanel).getByRole("button", {
+        name: "Enregistrer les rôles de Armand Braud",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(getSubmittedUserRoles()).toStrictEqual({
+        organizationId: "organization-id",
+        request: { roleCodes: ["architecte"] },
+        userId: "organization-user-id",
+      });
+    });
+    expect(await screen.findByText("Rôles mis à jour pour Armand Braud.")).toBeInTheDocument();
+    expect(within(userRolePanel).getByRole("checkbox", { name: /Architecte/ })).toBeChecked();
+  });
+
+  it("affiche les erreurs API de mise a jour des roles", async () => {
+    renderReadyPage({
+      submitUserRolesResult: {
+        message: "Cette combinaison de rôles n'est pas autorisée.",
+        ok: false,
+      },
+    });
+
+    const userRolePanel = await screen.findByRole("region", { name: "Rôles de Armand Braud" });
+
+    fireEvent.click(within(userRolePanel).getByRole("checkbox", { name: /Ouvrier/ }));
+    fireEvent.click(within(userRolePanel).getByRole("checkbox", { name: /Architecte/ }));
+    fireEvent.click(
+      within(userRolePanel).getByRole("button", {
+        name: "Enregistrer les rôles de Armand Braud",
+      }),
+    );
+
+    expect(
+      await screen.findByText("Cette combinaison de rôles n'est pas autorisée."),
+    ).toBeInTheDocument();
   });
 });
 
