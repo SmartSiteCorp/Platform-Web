@@ -257,6 +257,59 @@ describe("OrganizationSettingsPage - roles utilisateurs", () => {
   });
 });
 
+describe("OrganizationSettingsPage - roles utilisateurs (affichage)", () => {
+  beforeEach(() => {
+    resetOrganizationSettingsPageTest();
+  });
+
+  it("affiche le badge administrateur pour un utilisateur admin", async () => {
+    renderReadyPage();
+
+    const adminPanel = await screen.findByRole("region", {
+      name: `Rôles de ${registeredAccount.user.firstName} ${registeredAccount.user.lastName}`,
+    });
+
+    expect(within(adminPanel).getByText("Administrateur")).toBeInTheDocument();
+    expect(
+      within(adminPanel).getByRole("checkbox", { name: /Chef de chantier/ }),
+    ).not.toBeChecked();
+    expect(within(adminPanel).getByRole("checkbox", { name: /Architecte/ })).not.toBeChecked();
+    expect(within(adminPanel).getByRole("checkbox", { name: /Droniste/ })).not.toBeChecked();
+  });
+
+  it("desactive le bouton enregistrer quand les roles n'ont pas change", async () => {
+    renderReadyPage();
+
+    const armandPanel = await screen.findByRole("region", { name: "Rôles de Armand Braud" });
+
+    expect(
+      within(armandPanel).getByRole("button", { name: "Enregistrer les rôles de Armand Braud" }),
+    ).toBeDisabled();
+
+    fireEvent.click(within(armandPanel).getByRole("checkbox", { name: /Ouvrier/ }));
+    fireEvent.click(within(armandPanel).getByRole("checkbox", { name: /Ouvrier/ }));
+
+    expect(
+      within(armandPanel).getByRole("button", { name: "Enregistrer les rôles de Armand Braud" }),
+    ).toBeDisabled();
+  });
+
+  it.each(responsiveViewports)("affiche la gestion des roles en %s", async (_label, width) => {
+    setViewportWidth(width);
+    renderReadyPage();
+
+    expect(await screen.findByText("Gestion des rôles utilisateurs")).toBeInTheDocument();
+
+    const armandPanel = screen.getByRole("region", { name: "Rôles de Armand Braud" });
+
+    expect(within(armandPanel).getByText("armand.braud@smartsite.fr")).toBeInTheDocument();
+    expect(within(armandPanel).getByRole("checkbox", { name: /Ouvrier/ })).toBeInTheDocument();
+    expect(
+      within(armandPanel).getByRole("button", { name: "Enregistrer les rôles de Armand Braud" }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("OrganizationSettingsPage - session", () => {
   beforeEach(() => {
     resetOrganizationSettingsPageTest();

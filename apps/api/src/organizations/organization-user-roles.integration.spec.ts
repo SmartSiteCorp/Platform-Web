@@ -2,12 +2,9 @@ import "reflect-metadata";
 
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import { randomUUID } from "node:crypto";
 import type { Server } from "node:http";
-import type { QueryResultRow } from "pg";
 import request, { type Response } from "supertest";
 import { afterAll, afterEach, beforeAll, expect, it } from "vitest";
-import type { OrganizationRoleCode } from "@smartsite/shared";
 
 import { configureHttpApp } from "../app-http.js";
 import { AppModule } from "../app.module.js";
@@ -16,6 +13,10 @@ import {
   deleteCreatedOrganizations,
   removeUserRoles,
 } from "./organization-invitations-test-helpers.js";
+import {
+  createOrganizationUser,
+  findPersistedRoleCodes,
+} from "./organization-user-management-test-helpers.js";
 import type { OrganizationUserRolesResponseDto } from "./organization-user-roles.dto.js";
 import {
   createRegisterRequest,
@@ -23,18 +24,6 @@ import {
   parseRegisterResponse,
   type RegisteredTestAccount,
 } from "./organizations-test-helpers.js";
-
-interface CreatedOrganizationUser {
-  readonly id: string;
-}
-
-interface CreatedUserRow extends QueryResultRow {
-  readonly id: string;
-}
-
-interface UserRoleDatabaseRow extends QueryResultRow {
-  readonly role_codes: string[];
-}
 
 const createdOrganizationIds = new Set<string>();
 let app: INestApplication<Server>;
@@ -66,7 +55,9 @@ afterAll(async () => {
 
 it("returns organization user roles", async () => {
   const account = await createRegisteredAccount();
-  const user = await createOrganizationUser(account.response.organization.id, ["chef_chantier"]);
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "chef_chantier",
+  ]);
 
   const response = await request(getHttpServer())
     .get(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
@@ -82,7 +73,9 @@ it("returns organization user roles", async () => {
 
 it("adds a compatible user role and persists it", async () => {
   const account = await createRegisteredAccount();
-  const user = await createOrganizationUser(account.response.organization.id, ["chef_chantier"]);
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "chef_chantier",
+  ]);
 
   const response = await request(getHttpServer())
     .post(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
@@ -95,12 +88,17 @@ it("adds a compatible user role and persists it", async () => {
     roleCodes: ["chef_chantier", "droniste"],
     userId: user.id,
   });
-  expect(await findPersistedRoleCodes(user.id)).toStrictEqual(["chef_chantier", "droniste"]);
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual([
+    "chef_chantier",
+    "droniste",
+  ]);
 });
 
 it("keeps role assignment idempotent", async () => {
   const account = await createRegisteredAccount();
-  const user = await createOrganizationUser(account.response.organization.id, ["chef_chantier"]);
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "chef_chantier",
+  ]);
 
   const response = await request(getHttpServer())
     .post(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
@@ -109,12 +107,12 @@ it("keeps role assignment idempotent", async () => {
     .expect(200);
 
   expect(parseUserRolesResponse(response).roleCodes).toStrictEqual(["chef_chantier"]);
-  expect(await findPersistedRoleCodes(user.id)).toStrictEqual(["chef_chantier"]);
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual(["chef_chantier"]);
 });
 
 it("removes a user role and persists the change", async () => {
   const account = await createRegisteredAccount();
-  const user = await createOrganizationUser(account.response.organization.id, [
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
     "chef_chantier",
     "droniste",
   ]);
@@ -131,12 +129,14 @@ it("removes a user role and persists the change", async () => {
     roleCodes: ["chef_chantier"],
     userId: user.id,
   });
-  expect(await findPersistedRoleCodes(user.id)).toStrictEqual(["chef_chantier"]);
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual(["chef_chantier"]);
 });
 
 it("rejects incompatible role combinations", async () => {
   const account = await createRegisteredAccount();
-  const user = await createOrganizationUser(account.response.organization.id, ["ouvrier"]);
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "ouvrier",
+  ]);
 
   const response = await request(getHttpServer())
     .post(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
@@ -147,12 +147,14 @@ it("rejects incompatible role combinations", async () => {
   expect(parseApiErrorResponse(response).message).toContain(
     "Cette combinaison de rôles n'est pas autorisée.",
   );
-  expect(await findPersistedRoleCodes(user.id)).toStrictEqual(["ouvrier"]);
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual(["ouvrier"]);
 });
 
 it("rejects manual organization admin role assignment", async () => {
   const account = await createRegisteredAccount();
-  const user = await createOrganizationUser(account.response.organization.id, ["chef_chantier"]);
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "chef_chantier",
+  ]);
 
   const response = await request(getHttpServer())
     .post(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
@@ -163,12 +165,14 @@ it("rejects manual organization admin role assignment", async () => {
   expect(parseApiErrorResponse(response).message).toContain(
     "Ce rôle ne peut pas être attribué manuellement.",
   );
-  expect(await findPersistedRoleCodes(user.id)).toStrictEqual(["chef_chantier"]);
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual(["chef_chantier"]);
 });
 
 it("rejects removing the last user role", async () => {
   const account = await createRegisteredAccount();
-  const user = await createOrganizationUser(account.response.organization.id, ["ouvrier"]);
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "ouvrier",
+  ]);
 
   const response = await request(getHttpServer())
     .delete(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles/ouvrier`)
@@ -178,12 +182,14 @@ it("rejects removing the last user role", async () => {
   expect(parseApiErrorResponse(response).message).toContain(
     "Cette combinaison de rôles n'est pas autorisée.",
   );
-  expect(await findPersistedRoleCodes(user.id)).toStrictEqual(["ouvrier"]);
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual(["ouvrier"]);
 });
 
 it("rejects role management when requester is not organization admin", async () => {
   const account = await createRegisteredAccount();
-  const user = await createOrganizationUser(account.response.organization.id, ["ouvrier"]);
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "ouvrier",
+  ]);
 
   await removeUserRoles(databaseService, account.response.user.id);
 
@@ -197,6 +203,7 @@ it("rejects role management across organizations", async () => {
   const firstAccount = await createRegisteredAccount();
   const secondAccount = await createRegisteredAccount();
   const secondOrganizationUser = await createOrganizationUser(
+    databaseService,
     secondAccount.response.organization.id,
     ["ouvrier"],
   );
@@ -207,6 +214,77 @@ it("rejects role management across organizations", async () => {
     )
     .set("Authorization", `Bearer ${firstAccount.response.accessToken}`)
     .expect(403);
+});
+
+it("refuse la suppression d'un role non attribue a l'utilisateur", async () => {
+  const account = await createRegisteredAccount();
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "ouvrier",
+  ]);
+
+  const response = await request(getHttpServer())
+    .delete(
+      `/api/organizations/${account.response.organization.id}/users/${user.id}/roles/architecte`,
+    )
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .expect(404);
+
+  expect(parseApiErrorResponse(response).message).toContain(
+    "Ce rôle n'est pas associé à cet utilisateur.",
+  );
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual(["ouvrier"]);
+});
+
+it("refuse les requetes non authentifiees sur les endpoints de roles", async () => {
+  const account = await createRegisteredAccount();
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "ouvrier",
+  ]);
+
+  const rolesUrl = `/api/organizations/${account.response.organization.id}/users/${user.id}/roles`;
+
+  await request(getHttpServer()).get(rolesUrl).expect(401);
+  await request(getHttpServer()).post(rolesUrl).send({ roleCode: "chef_chantier" }).expect(401);
+  await request(getHttpServer()).delete(`${rolesUrl}/ouvrier`).expect(401);
+});
+
+it("refuse l'ajout de role par un utilisateur non administrateur", async () => {
+  const account = await createRegisteredAccount();
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "ouvrier",
+  ]);
+
+  await removeUserRoles(databaseService, account.response.user.id);
+
+  await request(getHttpServer())
+    .post(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({ roleCode: "chef_chantier" })
+    .expect(403);
+
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual(["ouvrier"]);
+});
+
+it("refuse la suppression de role par un utilisateur non administrateur", async () => {
+  const account = await createRegisteredAccount();
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "chef_chantier",
+    "droniste",
+  ]);
+
+  await removeUserRoles(databaseService, account.response.user.id);
+
+  await request(getHttpServer())
+    .delete(
+      `/api/organizations/${account.response.organization.id}/users/${user.id}/roles/droniste`,
+    )
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .expect(403);
+
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual([
+    "chef_chantier",
+    "droniste",
+  ]);
 });
 
 function getHttpServer(): Server {
@@ -227,67 +305,6 @@ async function createRegisteredAccount(): Promise<RegisteredTestAccount> {
     request: registrationRequest,
     response: responseBody,
   };
-}
-
-async function createOrganizationUser(
-  organizationId: string,
-  roleCodes: readonly OrganizationRoleCode[],
-): Promise<CreatedOrganizationUser> {
-  const result = await databaseService.query<CreatedUserRow>(
-    `
-      INSERT INTO users (organization_id, email, password_hash, first_name, last_name, status)
-      VALUES ($1, $2, $3, $4, $5, 'active')
-      RETURNING id
-    `,
-    [
-      organizationId,
-      `organization-user-${randomUUID()}@smartsite.test`,
-      "test-password-hash",
-      "Armand",
-      "Braud",
-    ],
-  );
-  const user = result.rows[0];
-
-  if (!user) {
-    throw new Error("Test user was not created.");
-  }
-
-  await databaseService.query(
-    `
-      INSERT INTO user_roles (user_id, role_id)
-      SELECT $1, roles.id
-      FROM roles
-      WHERE roles.code = ANY($2::varchar[])
-    `,
-    [user.id, [...roleCodes]],
-  );
-
-  return {
-    id: user.id,
-  };
-}
-
-async function findPersistedRoleCodes(userId: string): Promise<readonly string[]> {
-  const result = await databaseService.query<UserRoleDatabaseRow>(
-    `
-      SELECT COALESCE(array_agg(roles.code ORDER BY roles.code)
-        FILTER (WHERE roles.code IS NOT NULL), ARRAY[]::varchar[]) AS role_codes
-      FROM users
-      LEFT JOIN user_roles ON user_roles.user_id = users.id
-      LEFT JOIN roles ON roles.id = user_roles.role_id
-      WHERE users.id = $1
-      GROUP BY users.id
-    `,
-    [userId],
-  );
-  const row = result.rows[0];
-
-  if (!row) {
-    throw new Error(`User roles not found for ${userId}.`);
-  }
-
-  return row.role_codes;
 }
 
 function parseUserRolesResponse(response: Response): OrganizationUserRolesResponseDto {

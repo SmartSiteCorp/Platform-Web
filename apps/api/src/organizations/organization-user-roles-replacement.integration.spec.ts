@@ -14,7 +14,10 @@ import {
   findLatestUserRolesAuditLog,
   findPersistedRoleCodes,
 } from "./organization-user-management-test-helpers.js";
-import { deleteCreatedOrganizations } from "./organization-invitations-test-helpers.js";
+import {
+  deleteCreatedOrganizations,
+  removeUserRoles,
+} from "./organization-invitations-test-helpers.js";
 import type { OrganizationUserRolesResponseDto } from "./organization-user-roles.dto.js";
 import {
   createRegisterRequest,
@@ -149,6 +152,81 @@ async function createRegisteredAccount(): Promise<RegisteredTestAccount> {
     response: responseBody,
   };
 }
+
+it("remplace les roles par la combinaison multi-roles chef_chantier et droniste", async () => {
+  const account = await createRegisteredAccount();
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "ouvrier",
+  ]);
+
+  const response = await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({ roleCodes: ["chef_chantier", "droniste"] })
+    .expect(200);
+
+  expect(parseUserRolesResponse(response)).toStrictEqual({
+    organizationId: account.response.organization.id,
+    roleCodes: ["chef_chantier", "droniste"],
+    userId: user.id,
+  });
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual([
+    "chef_chantier",
+    "droniste",
+  ]);
+});
+
+it("remplace les roles par le role ouvrier uniquement", async () => {
+  const account = await createRegisteredAccount();
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "chef_chantier",
+    "droniste",
+  ]);
+
+  const response = await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({ roleCodes: ["ouvrier"] })
+    .expect(200);
+
+  expect(parseUserRolesResponse(response)).toStrictEqual({
+    organizationId: account.response.organization.id,
+    roleCodes: ["ouvrier"],
+    userId: user.id,
+  });
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual(["ouvrier"]);
+});
+
+it("refuse le remplacement de roles sans authentification JWT", async () => {
+  const account = await createRegisteredAccount();
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "ouvrier",
+  ]);
+
+  await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
+    .send({ roleCodes: ["chef_chantier"] })
+    .expect(401);
+
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual(["ouvrier"]);
+});
+
+it("refuse le remplacement de roles par un utilisateur non administrateur", async () => {
+  const account = await createRegisteredAccount();
+  const user = await createOrganizationUser(databaseService, account.response.organization.id, [
+    "ouvrier",
+  ]);
+
+  await removeUserRoles(databaseService, account.response.user.id);
+
+  await request(getHttpServer())
+    .put(`/api/organizations/${account.response.organization.id}/users/${user.id}/roles`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .send({ roleCodes: ["chef_chantier"] })
+    .expect(403);
+
+  expect(await findPersistedRoleCodes(databaseService, user.id)).toStrictEqual(["ouvrier"]);
+});
 
 it("journalise le remplacement de roles dans organization_audit_logs", async () => {
   const account = await createRegisteredAccount();
