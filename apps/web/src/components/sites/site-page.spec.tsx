@@ -132,6 +132,17 @@ describe("SitePage - formulaire upload", () => {
     ).toBeInTheDocument();
   });
 
+  it("affiche une erreur si le fichier dépasse 50 Mo", async () => {
+    renderPage(createEmptyListLoader(), createSuccessUploader());
+
+    await screen.findByRole("form", { name: "Formulaire upload document" });
+    selectLargeFile();
+
+    expect(
+      await screen.findByText("Le fichier dépasse la taille maximale autorisée (50 Mo)."),
+    ).toBeInTheDocument();
+  });
+
   it("affiche le message de succès après upload réussi", async () => {
     renderPage(createEmptyListLoader(), createSuccessUploader());
 
@@ -257,6 +268,13 @@ function selectTestFile(): void {
 
 function selectInvalidFile(): void {
   const file = new File(["content"], "virus.exe", { type: "application/octet-stream" });
+  simulateFileSelection(file);
+}
+
+function selectLargeFile(): void {
+  const file = new File(["content"], "large.pdf", { type: "application/pdf" });
+  // jsdom dérive size depuis le contenu réel — on le remplace pour simuler un fichier > 50 Mo.
+  Object.defineProperty(file, "size", { configurable: true, value: 51 * 1024 * 1024 });
   simulateFileSelection(file);
 }
 
