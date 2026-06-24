@@ -166,6 +166,22 @@ it("retourne 400 si le format de fichier n'est pas autorisé", async () => {
     .expect(400);
 });
 
+it("retourne 400 si le fichier dépasse la taille maximale autorisée (50 Mo)", async () => {
+  const account = await createChefChantierAccount();
+  const siteId = await createSite(account);
+
+  // 51 Mo de zéros — dépasse la limite de 50 Mo configurée dans le contrôleur.
+  const largeBuffer = Buffer.alloc(51 * 1024 * 1024);
+
+  await request(getHttpServer())
+    .post(`/api/sites/${siteId}/documents`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .attach("file", largeBuffer, { contentType: "application/pdf", filename: "lourd.pdf" })
+    .field("title", "Fichier volumineux")
+    .field("documentType", "devis")
+    .expect(400);
+}, 30_000);
+
 it("retourne 404 si le chantier n'existe pas lors de l'upload", async () => {
   const account = await createChefChantierAccount();
 
