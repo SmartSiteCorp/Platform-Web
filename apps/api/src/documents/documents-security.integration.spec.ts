@@ -2,9 +2,14 @@ import "reflect-metadata";
 
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { rm } from "node:fs/promises";
 import type { Server } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, expect, it } from "vitest";
+
+const testUploadsPath = join(tmpdir(), `smartsite-test-security-${String(Date.now())}`);
 
 import { configureHttpApp } from "../app-http.js";
 import { AppModule } from "../app.module.js";
@@ -26,6 +31,7 @@ let databaseService: DatabaseService;
 beforeAll(async () => {
   process.env.AUTH_REGISTER_RATE_LIMIT_LIMIT = "100";
   process.env.AUTH_REGISTER_RATE_LIMIT_TTL_SECONDS = "60";
+  process.env.UPLOADS_PATH = testUploadsPath;
 
   const testingModule = await Test.createTestingModule({
     imports: [AppModule],
@@ -45,6 +51,7 @@ afterEach(async () => {
 
 afterAll(async () => {
   await app.close();
+  await rm(testUploadsPath, { force: true, recursive: true });
 });
 
 it("associe le fichier uploadé à l'organisation du token JWT", async () => {
@@ -147,6 +154,91 @@ it("ne stocke pas de données sensibles dans les métadonnées du fichier", asyn
   expect(document).not.toHaveProperty("publicUrl");
   // Le provider de stockage placeholder est bien 'local'
   expect(persistedFile?.storage_provider).toBe("local");
+});
+
+it("retourne 401 sans token JWT sur l'upload", async () => {
+  const account = await createChefChantierAccount();
+  const siteId = await createSite(account);
+
+  await request(getHttpServer())
+    .post(`/api/sites/${siteId}/documents`)
+    .attach("file", createTestPdfBuffer(), { contentType: "application/pdf", filename: "f.pdf" })
+    .field("title", "Titre")
+    .field("documentType", "devis")
+    .expect(401);
+});
+
+it("retourne 401 sans token JWT sur le listage", async () => {
+  const account = await createChefChantierAccount();
+  const siteId = await createSite(account);
+
+  await request(getHttpServer()).get(`/api/sites/${siteId}/documents`).expect(401);
+});
+
+it("retourne 403 si l'utilisateur a le rôle ouvrier", async () => {
+  const account = await createChefChantierAccount();
+  const siteId = await createSite(account);
+
+  await setUserRoles(databaseService, account.response.user.id, ["ouvrier"]);
+
+  await request(getHttpServer())
+    .post(`/api/sites/${siteId}/documents`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .attach("file", createTestPdfBuffer(), { contentType: "application/pdf", filename: "f.pdf" })
+    .field("title", "Titre")
+    .field("documentType", "devis")
+    .expect(403);
+});
+
+it("refuse le téléchargement d'un document d'une autre organisation (cross-org)", async () => {
+  const accountA = await createChefChantierAccount();
+  const accountB = await createChefChantierAccount();
+
+  const siteIdA = await createSite(accountA);
+  const siteIdB = await createSite(accountB);
+
+  // A uploade un document sur son chantier
+  const uploadResponse = await request(getHttpServer())
+    .post(`/api/sites/${siteIdA}/documents`)
+    .set("Authorization", `Bearer ${accountA.response.accessToken}`)
+    .attach("file", createTestPdfBuffer(), {
+      contentType: "application/pdf",
+      filename: "secret.pdf",
+    })
+    .field("title", "Document confidentiel")
+    .field("documentType", "contrat")
+    .expect(201);
+
+  const document = parseDocumentResponse(uploadResponse);
+
+  // B essaie de télécharger le document de A via son propre chantier → 404
+  await request(getHttpServer())
+    .get(`/api/sites/${siteIdB}/documents/${document.id}/download`)
+    .set("Authorization", `Bearer ${accountB.response.accessToken}`)
+    .expect(404);
+});
+
+it("refuse le téléchargement si le siteId ne correspond pas au document (cross-site)", async () => {
+  const account = await createChefChantierAccount();
+  const siteId1 = await createSite(account);
+  const siteId2 = await createSite(account);
+
+  // Upload sur chantier 1
+  const uploadResponse = await request(getHttpServer())
+    .post(`/api/sites/${siteId1}/documents`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .attach("file", createTestPdfBuffer(), { contentType: "application/pdf", filename: "doc.pdf" })
+    .field("title", "Document chantier 1")
+    .field("documentType", "devis")
+    .expect(201);
+
+  const document = parseDocumentResponse(uploadResponse);
+
+  // Accès via l'URL du chantier 2 → 404 (le document appartient au chantier 1)
+  await request(getHttpServer())
+    .get(`/api/sites/${siteId2}/documents/${document.id}/download`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .expect(404);
 });
 
 function getHttpServer(): Server {

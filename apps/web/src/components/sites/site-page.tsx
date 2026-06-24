@@ -5,19 +5,29 @@ import { HardHat, Loader2 } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { listDocuments, uploadDocument } from "@/lib/documents";
+import { downloadDocument, listDocuments, uploadDocument } from "@/lib/documents";
 import { useRequiredAuthSession } from "@/lib/use-auth-session";
 
-import { SiteDocumentsSection, type ListDocumentsLoader } from "./site-documents-section";
+import {
+  SiteDocumentsSection,
+  type DocumentDownloader,
+  type ListDocumentsLoader,
+} from "./site-documents-section";
 import type { UploadDocumentSubmitter } from "./upload-document-form";
 
 interface SitePageProps {
+  readonly downloadDocumentLoader?: DocumentDownloader;
   readonly listDocumentsLoader?: ListDocumentsLoader;
   readonly siteId: string;
   readonly submitUpload?: UploadDocumentSubmitter;
 }
 
-export function SitePage({ listDocumentsLoader, siteId, submitUpload }: SitePageProps) {
+export function SitePage({
+  downloadDocumentLoader,
+  listDocumentsLoader,
+  siteId,
+  submitUpload,
+}: SitePageProps) {
   const { isCheckingSession, session } = useRequiredAuthSession();
 
   if (isCheckingSession) {
@@ -50,12 +60,29 @@ export function SitePage({ listDocumentsLoader, siteId, submitUpload }: SitePage
       return uploadDocument(session.accessToken, siteId, title, documentType, file);
     });
 
+  const downloader: DocumentDownloader =
+    downloadDocumentLoader ??
+    ((documentId, originalName) => {
+      if (!session) {
+        return Promise.resolve({
+          message: "Votre session a expiré. Connectez-vous à nouveau.",
+          ok: false as const,
+        });
+      }
+      return downloadDocument(session.accessToken, siteId, documentId, originalName);
+    });
+
   return (
     <main className="min-h-screen bg-background">
       <AppHeader activeItem="dashboard" />
       <section className="container py-8">
         <SitePageIntro />
-        <SiteDocumentsSection listDocuments={loader} siteId={siteId} submitUpload={uploader} />
+        <SiteDocumentsSection
+          downloadDocument={downloader}
+          listDocuments={loader}
+          siteId={siteId}
+          submitUpload={uploader}
+        />
       </section>
     </main>
   );

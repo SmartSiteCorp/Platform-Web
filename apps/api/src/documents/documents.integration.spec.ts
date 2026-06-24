@@ -32,6 +32,7 @@ let databaseService: DatabaseService;
 beforeAll(async () => {
   process.env.AUTH_REGISTER_RATE_LIMIT_LIMIT = "100";
   process.env.AUTH_REGISTER_RATE_LIMIT_TTL_SECONDS = "60";
+  process.env.UPLOADS_PATH = "/tmp/smartsite-integration-test";
 
   const testingModule = await Test.createTestingModule({
     imports: [AppModule],
@@ -165,33 +166,6 @@ it("retourne 400 si le format de fichier n'est pas autorisé", async () => {
     .expect(400);
 });
 
-it("retourne 401 sans token JWT sur l'upload", async () => {
-  const account = await createChefChantierAccount();
-  const siteId = await createSite(account);
-
-  await request(getHttpServer())
-    .post(`/api/sites/${siteId}/documents`)
-    .attach("file", createTestPdfBuffer(), { contentType: "application/pdf", filename: "f.pdf" })
-    .field("title", "Titre")
-    .field("documentType", "devis")
-    .expect(401);
-});
-
-it("retourne 403 si l'utilisateur a le rôle ouvrier", async () => {
-  const account = await createChefChantierAccount();
-  const siteId = await createSite(account);
-
-  await setUserRoles(databaseService, account.response.user.id, ["ouvrier"]);
-
-  await request(getHttpServer())
-    .post(`/api/sites/${siteId}/documents`)
-    .set("Authorization", `Bearer ${account.response.accessToken}`)
-    .attach("file", createTestPdfBuffer(), { contentType: "application/pdf", filename: "f.pdf" })
-    .field("title", "Titre")
-    .field("documentType", "devis")
-    .expect(403);
-});
-
 it("retourne 404 si le chantier n'existe pas lors de l'upload", async () => {
   const account = await createChefChantierAccount();
 
@@ -235,13 +209,6 @@ it("retourne les documents uploadés pour un chantier", async () => {
   expect(list.documents).toHaveLength(2);
   expect(list.documents.map((d) => d.title)).toContain("Premier document");
   expect(list.documents.map((d) => d.title)).toContain("Deuxième document");
-});
-
-it("retourne 401 sans token JWT sur le listage", async () => {
-  const account = await createChefChantierAccount();
-  const siteId = await createSite(account);
-
-  await request(getHttpServer()).get(`/api/sites/${siteId}/documents`).expect(401);
 });
 
 it("retourne 404 si le chantier n'existe pas lors du listage", async () => {

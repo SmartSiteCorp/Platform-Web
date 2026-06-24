@@ -3,6 +3,7 @@ import {
   Controller,
   FileTypeValidator,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Inject,
@@ -12,6 +13,7 @@ import {
   ParseUUIDPipe,
   Post,
   Req,
+  StreamableFile,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -27,6 +29,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiParam,
+  ApiProduces,
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
@@ -120,5 +123,33 @@ export class DocumentsController {
     @Req() req: AuthenticatedRequest,
   ): Promise<DocumentListResponseDto> {
     return this.documentsService.listDocuments(siteId, req.auth);
+  }
+
+  @Get(":siteId/documents/:documentId/download")
+  @Header("Cache-Control", "no-store")
+  @ApiParam({ name: "siteId", type: String })
+  @ApiParam({ name: "documentId", type: String })
+  @ApiProduces("application/octet-stream")
+  @ApiOkResponse({ description: "Contenu binaire du document." })
+  @ApiUnauthorizedResponse({
+    description: "Token JWT manquant ou invalide.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: "Chantier ou document introuvable.",
+    type: ApiErrorResponseDto,
+  })
+  public async downloadDocument(
+    @Param("siteId", new ParseUUIDPipe({ version: "4" })) siteId: string,
+    @Param("documentId", new ParseUUIDPipe({ version: "4" })) documentId: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<StreamableFile> {
+    const result = await this.documentsService.downloadDocument(documentId, siteId, req.auth);
+
+    return new StreamableFile(result.buffer, {
+      disposition: `attachment; filename="${encodeURIComponent(result.originalName)}"`,
+      length: result.buffer.length,
+      type: result.mimeType,
+    });
   }
 }

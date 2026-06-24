@@ -316,6 +316,36 @@ export type DocumentsControllerUploadDocumentResponses = {
 
 export type DocumentsControllerUploadDocumentResponse = DocumentsControllerUploadDocumentResponses[keyof DocumentsControllerUploadDocumentResponses];
 
+export type DocumentsControllerDownloadDocumentData = {
+    body?: never;
+    path: {
+        documentId: string;
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/documents/{documentId}/download';
+};
+
+export type DocumentsControllerDownloadDocumentErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Chantier ou document introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DocumentsControllerDownloadDocumentError = DocumentsControllerDownloadDocumentErrors[keyof DocumentsControllerDownloadDocumentErrors];
+
+export type DocumentsControllerDownloadDocumentResponses = {
+    /**
+     * Contenu binaire du document.
+     */
+    200: unknown;
+};
+
 export type OrganizationsControllerGetOrganizationData = {
     body?: never;
     path: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Loader2 } from "lucide-react";
+import { Download, FileText, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { OrganizationFormStatusMessage } from "@/components/organization/organization-form-status-message";
@@ -19,14 +19,20 @@ const documentTypeLabels: Record<string, string> = {
 };
 
 export type ListDocumentsLoader = (siteId: string) => Promise<ListDocumentsResult>;
+export type DocumentDownloader = (
+  documentId: string,
+  originalName: string,
+) => Promise<{ readonly ok: true } | { readonly message: string; readonly ok: false }>;
 
 interface SiteDocumentsSectionProps {
+  readonly downloadDocument: DocumentDownloader;
   readonly listDocuments: ListDocumentsLoader;
   readonly siteId: string;
   readonly submitUpload: UploadDocumentSubmitter;
 }
 
 export function SiteDocumentsSection({
+  downloadDocument,
   listDocuments,
   siteId,
   submitUpload,
@@ -75,7 +81,12 @@ export function SiteDocumentsSection({
           <CardTitle>Documents du chantier</CardTitle>
         </CardHeader>
         <CardContent>
-          <DocumentList documents={documents} isLoading={isLoading} loadError={loadError} />
+          <DocumentList
+            documents={documents}
+            isLoading={isLoading}
+            loadError={loadError}
+            onDownload={downloadDocument}
+          />
         </CardContent>
       </Card>
     </div>
@@ -86,9 +97,10 @@ interface DocumentListProps {
   readonly documents: readonly DocumentResponseDto[];
   readonly isLoading: boolean;
   readonly loadError: string | null;
+  readonly onDownload: DocumentDownloader;
 }
 
-function DocumentList({ documents, isLoading, loadError }: DocumentListProps) {
+function DocumentList({ documents, isLoading, loadError, onDownload }: DocumentListProps) {
   if (isLoading) {
     return (
       <div className="flex items-center gap-3 py-6 text-muted-foreground">
@@ -113,7 +125,7 @@ function DocumentList({ documents, isLoading, loadError }: DocumentListProps) {
   return (
     <ul aria-label="Liste des documents" className="divide-y divide-border">
       {documents.map((document) => (
-        <DocumentItem document={document} key={document.id} />
+        <DocumentItem document={document} key={document.id} onDownload={onDownload} />
       ))}
     </ul>
   );
@@ -121,12 +133,26 @@ function DocumentList({ documents, isLoading, loadError }: DocumentListProps) {
 
 interface DocumentItemProps {
   readonly document: DocumentResponseDto;
+  readonly onDownload: DocumentDownloader;
 }
 
-function DocumentItem({ document }: DocumentItemProps) {
+function DocumentItem({ document, onDownload }: DocumentItemProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
   const sizeKo = (document.file.sizeBytes / 1024).toFixed(0);
   const typeLabel = documentTypeLabels[document.documentType] ?? document.documentType;
   const date = new Date(document.createdAt).toLocaleDateString("fr-FR");
+
+  const handleDownload = async (): Promise<void> => {
+    setIsDownloading(true);
+    setDownloadError(null);
+    const result = await onDownload(document.id, document.file.originalName);
+    if (!result.ok) {
+      setDownloadError(result.message);
+    }
+    setIsDownloading(false);
+  };
 
   return (
     <li className="flex items-center justify-between gap-4 py-3">
@@ -137,11 +163,31 @@ function DocumentItem({ document }: DocumentItemProps) {
           <p className="text-xs text-muted-foreground">
             {document.file.originalName} · {sizeKo} Ko
           </p>
+          {downloadError ? (
+            <p className="text-xs text-destructive" role="alert">
+              {downloadError}
+            </p>
+          ) : null}
         </div>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        <span className="text-xs font-medium text-muted-foreground">{typeLabel}</span>
-        <span className="text-xs text-muted-foreground">{date}</span>
+      <div className="flex shrink-0 items-center gap-3">
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-xs font-medium text-muted-foreground">{typeLabel}</span>
+          <span className="text-xs text-muted-foreground">{date}</span>
+        </div>
+        <button
+          aria-label={`Télécharger ${document.title}`}
+          className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isDownloading}
+          onClick={() => void handleDownload()}
+          type="button"
+        >
+          {isDownloading ? (
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download aria-hidden="true" className="h-4 w-4" />
+          )}
+        </button>
       </div>
     </li>
   );
