@@ -54,6 +54,24 @@ export interface UploadDocumentInput {
   readonly blobPath: string;
 }
 
+export interface StoragePort {
+  save(blobPath: string, buffer: Buffer): Promise<void>;
+  read(blobPath: string): Promise<Buffer>;
+}
+
+export interface DocumentForDownload {
+  readonly id: string;
+  readonly blobPath: string;
+  readonly mimeType: string;
+  readonly originalName: string;
+}
+
+export interface DownloadableDocument {
+  readonly buffer: Buffer;
+  readonly mimeType: string;
+  readonly originalName: string;
+}
+
 export interface DocumentsRepositoryPort {
   siteExistsInOrganization(siteId: string, organizationId: string): Promise<boolean>;
   uploadDocument(input: UploadDocumentInput): Promise<DocumentDetails>;
@@ -61,4 +79,9 @@ export interface DocumentsRepositoryPort {
     siteId: string,
     organizationId: string,
   ): Promise<readonly DocumentDetails[]>;
+  findDocumentForDownload(
+    documentId: string,
+    siteId: string,
+    organizationId: string,
+  ): Promise<DocumentForDownload | null>;
 }

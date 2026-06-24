@@ -5,6 +5,7 @@ import { DatabaseService } from "../database/database.service.js";
 import type {
   DocumentDetails,
   DocumentFileDetails,
+  DocumentForDownload,
   DocumentsRepositoryPort,
   UploadDocumentInput,
 } from "./documents.types.js";
@@ -145,6 +146,39 @@ export class DocumentsRepository implements DocumentsRepositoryPort {
         },
       ),
     );
+  }
+
+  public async findDocumentForDownload(
+    documentId: string,
+    siteId: string,
+    organizationId: string,
+  ): Promise<DocumentForDownload | null> {
+    const result = await this.databaseService.query<{
+      readonly id: string;
+      readonly blob_path: string;
+      readonly mime_type: string;
+      readonly original_name: string;
+    }>(
+      `
+        SELECT d.id, f.blob_path, f.mime_type, f.original_name
+        FROM documents d
+        JOIN files f ON f.id = d.file_id
+        JOIN sites s ON s.id = d.site_id
+        WHERE d.id = $1 AND d.site_id = $2 AND s.organization_id = $3
+      `,
+      [documentId, siteId, organizationId],
+    );
+
+    const row = result.rows[0];
+
+    if (!row) return null;
+
+    return {
+      blobPath: row.blob_path,
+      id: row.id,
+      mimeType: row.mime_type,
+      originalName: row.original_name,
+    };
   }
 
   private mapDocument(

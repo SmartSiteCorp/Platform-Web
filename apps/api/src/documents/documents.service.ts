@@ -8,9 +8,14 @@ import type {
   DocumentResponseDto,
   UploadDocumentRequestDto,
 } from "./documents.dto.js";
-import type { MulterFile } from "./documents.types.js";
 import { DocumentsRepository } from "./documents.repository.js";
-import type { DocumentsRepositoryPort } from "./documents.types.js";
+import { DocumentsStorage } from "./documents.storage.js";
+import type {
+  DocumentsRepositoryPort,
+  DownloadableDocument,
+  MulterFile,
+  StoragePort,
+} from "./documents.types.js";
 
 const documentManagementRoleCodes = ["chef_chantier", "administrateur"] as const;
 
@@ -19,6 +24,7 @@ export class DocumentsService {
   public constructor(
     @Inject(DocumentsRepository) private readonly documentsRepository: DocumentsRepositoryPort,
     @Inject(OrganizationsService) private readonly organizationsService: OrganizationsService,
+    @Inject(DocumentsStorage) private readonly storage: StoragePort,
   ) {}
 
   public async uploadDocument(
@@ -49,6 +55,9 @@ export class DocumentsService {
       uploadedBy: user.sub,
     });
 
+    // Sauvegarde sur disque après l'insertion en base pour garantir la cohérence métadonnées ↔ fichier.
+    await this.storage.save(blobPath, file.buffer);
+
     return document;
   }
 
@@ -64,6 +73,28 @@ export class DocumentsService {
     );
 
     return { documents, siteId };
+  }
+
+  public async downloadDocument(
+    documentId: string,
+    siteId: string,
+    user: AccessTokenPayload,
+  ): Promise<DownloadableDocument> {
+    await this.assertSiteInOrganization(siteId, user.organizationId);
+
+    const document = await this.documentsRepository.findDocumentForDownload(
+      documentId,
+      siteId,
+      user.organizationId,
+    );
+
+    if (!document) {
+      throw new NotFoundException(["Le document est introuvable."]);
+    }
+
+    const buffer = await this.storage.read(document.blobPath);
+
+    return { buffer, mimeType: document.mimeType, originalName: document.originalName };
   }
 
   private async assertSiteInOrganization(siteId: string, organizationId: string): Promise<void> {

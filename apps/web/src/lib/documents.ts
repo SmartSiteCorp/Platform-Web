@@ -6,6 +6,10 @@ import {
 } from "@/generated/api";
 import { getApiBaseUrl } from "@/lib/api-config";
 
+export type DownloadDocumentResult =
+  | { readonly ok: true }
+  | { readonly message: string; readonly ok: false; readonly sessionExpired?: true };
+
 export type DocumentType = "devis" | "plan" | "rapport" | "contrat" | "autre";
 
 export type UploadDocumentResult =
@@ -52,6 +56,50 @@ export async function listDocuments(
   }
 
   return { ok: true, documents: response.data.documents };
+}
+
+export async function downloadDocument(
+  accessToken: string,
+  siteId: string,
+  documentId: string,
+  originalName: string,
+): Promise<DownloadDocumentResult> {
+  const url = `${getApiBaseUrl()}/api/sites/${siteId}/documents/${documentId}/download`;
+
+  let response: Response;
+
+  try {
+    response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  } catch {
+    return { message: "Impossible de joindre l'API SmartSite.", ok: false };
+  }
+
+  if (response.status === 401) {
+    return {
+      message: "Votre session a expiré. Connectez-vous à nouveau.",
+      ok: false,
+      sessionExpired: true,
+    };
+  }
+
+  if (response.status === 404) {
+    return { message: "Le document est introuvable.", ok: false };
+  }
+
+  if (!response.ok) {
+    return { message: "Le téléchargement a échoué.", ok: false };
+  }
+
+  // Téléchargement navigateur via blob URL temporaire.
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = blobUrl;
+  anchor.download = originalName;
+  anchor.click();
+  URL.revokeObjectURL(blobUrl);
+
+  return { ok: true };
 }
 
 function buildDocumentErrorResult(

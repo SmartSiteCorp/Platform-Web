@@ -6,7 +6,7 @@ import { createTestAccessToken } from "@/test/create-test-access-token";
 import type { ListDocumentsResult } from "@/lib/documents";
 import { SitePage } from "./site-page";
 import type { UploadDocumentSubmitter } from "./upload-document-form";
-import type { ListDocumentsLoader } from "./site-documents-section";
+import type { DocumentDownloader, ListDocumentsLoader } from "./site-documents-section";
 
 const routerMock = vi.hoisted(() => ({
   push: vi.fn<(url: string) => void>(),
@@ -217,12 +217,18 @@ describe("SitePage - responsive", () => {
   });
 });
 
+function createNoOpDownloader(): DocumentDownloader {
+  return () => Promise.resolve({ ok: true });
+}
+
 function renderPage(
   listDocumentsLoader: ListDocumentsLoader,
   submitUpload: UploadDocumentSubmitter,
+  downloadDocumentLoader: DocumentDownloader = createNoOpDownloader(),
 ): void {
   render(
     <SitePage
+      downloadDocumentLoader={downloadDocumentLoader}
       listDocumentsLoader={listDocumentsLoader}
       siteId={SITE_ID}
       submitUpload={submitUpload}
