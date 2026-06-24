@@ -58,10 +58,27 @@ export type LoginResponseDto = {
     accessToken: string;
 };
 
-export type HealthResponseDto = {
-    status: string;
-    message: string;
-    timestamp: string;
+export type DocumentFileResponseDto = {
+    id: string;
+    originalName: string;
+    mimeType: string;
+    sizeBytes: number;
+    createdAt: string;
+};
+
+export type DocumentResponseDto = {
+    id: string;
+    siteId: string;
+    fileId: string;
+    title: string;
+    documentType: 'devis' | 'plan' | 'rapport' | 'contrat' | 'autre';
+    file: DocumentFileResponseDto;
+    createdAt: string;
+};
+
+export type DocumentListResponseDto = {
+    siteId: string;
+    documents: Array<DocumentResponseDto>;
 };
 
 export type OrganizationResponseDto = {
@@ -143,6 +160,12 @@ export type UpdateOrganizationUserRolesRequestDto = {
     roleCodes: Array<string>;
 };
 
+export type HealthResponseDto = {
+    status: string;
+    message: string;
+    timestamp: string;
+};
+
 export type CreateSiteRequestDto = {
     name: string;
     address?: string | null;
@@ -219,18 +242,79 @@ export type AuthControllerLoginResponses = {
 
 export type AuthControllerLoginResponse = AuthControllerLoginResponses[keyof AuthControllerLoginResponses];
 
-export type HealthControllerGetHealthData = {
+export type DocumentsControllerListDocumentsData = {
     body?: never;
-    path?: never;
+    path: {
+        siteId: string;
+    };
     query?: never;
-    url: '/api/health';
+    url: '/api/sites/{siteId}/documents';
 };
 
-export type HealthControllerGetHealthResponses = {
-    200: HealthResponseDto;
+export type DocumentsControllerListDocumentsErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
 };
 
-export type HealthControllerGetHealthResponse = HealthControllerGetHealthResponses[keyof HealthControllerGetHealthResponses];
+export type DocumentsControllerListDocumentsError = DocumentsControllerListDocumentsErrors[keyof DocumentsControllerListDocumentsErrors];
+
+export type DocumentsControllerListDocumentsResponses = {
+    /**
+     * Liste des documents du chantier.
+     */
+    200: DocumentListResponseDto;
+};
+
+export type DocumentsControllerListDocumentsResponse = DocumentsControllerListDocumentsResponses[keyof DocumentsControllerListDocumentsResponses];
+
+export type DocumentsControllerUploadDocumentData = {
+    body: {
+        documentType: 'devis' | 'plan' | 'rapport' | 'contrat' | 'autre';
+        file: Blob | File;
+        title: string;
+    };
+    path: {
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/documents';
+};
+
+export type DocumentsControllerUploadDocumentErrors = {
+    /**
+     * Données invalides.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DocumentsControllerUploadDocumentError = DocumentsControllerUploadDocumentErrors[keyof DocumentsControllerUploadDocumentErrors];
+
+export type DocumentsControllerUploadDocumentResponses = {
+    /**
+     * Document uploadé avec succès.
+     */
+    201: DocumentResponseDto;
+};
+
+export type DocumentsControllerUploadDocumentResponse = DocumentsControllerUploadDocumentResponses[keyof DocumentsControllerUploadDocumentResponses];
 
 export type OrganizationsControllerGetOrganizationData = {
     body?: never;
@@ -538,6 +622,19 @@ export type OrganizationUserRolesControllerRemoveUserRoleResponses = {
 };
 
 export type OrganizationUserRolesControllerRemoveUserRoleResponse = OrganizationUserRolesControllerRemoveUserRoleResponses[keyof OrganizationUserRolesControllerRemoveUserRoleResponses];
+
+export type HealthControllerGetHealthData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/health';
+};
+
+export type HealthControllerGetHealthResponses = {
+    200: HealthResponseDto;
+};
+
+export type HealthControllerGetHealthResponse = HealthControllerGetHealthResponses[keyof HealthControllerGetHealthResponses];
 
 export type SitesControllerCreateSiteData = {
     body: CreateSiteRequestDto;

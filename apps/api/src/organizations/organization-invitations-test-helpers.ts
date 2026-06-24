@@ -196,8 +196,12 @@ export async function deleteCreatedOrganizations(
     return;
   }
 
-  // Les sites référencent les users avec RESTRICT : suppression avant les users.
+  // Les sites cascadent vers documents, phases, tâches, preuves et problèmes.
   await databaseService.query("DELETE FROM sites WHERE organization_id = ANY($1::uuid[])", [
+    organizationIds,
+  ]);
+  // Les fichiers référencent l'org avec RESTRICT : suppression après les documents (cascade ci-dessus).
+  await databaseService.query("DELETE FROM files WHERE organization_id = ANY($1::uuid[])", [
     organizationIds,
   ]);
   await databaseService.query("DELETE FROM users WHERE organization_id = ANY($1::uuid[])", [
