@@ -60,7 +60,10 @@ it("uploade un PDF et retourne 201 avec les métadonnées du document", async ()
   const response = await request(getHttpServer())
     .post(`/api/sites/${siteId}/documents`)
     .set("Authorization", `Bearer ${account.response.accessToken}`)
-    .attach("file", createTestPdfBuffer(), { contentType: "application/pdf", filename: "devis.pdf" })
+    .attach("file", createTestPdfBuffer(), {
+      contentType: "application/pdf",
+      filename: "devis.pdf",
+    })
     .field("title", "Devis toiture")
     .field("documentType", "devis")
     .expect(201);

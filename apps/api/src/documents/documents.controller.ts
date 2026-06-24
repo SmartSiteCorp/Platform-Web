@@ -55,7 +55,9 @@ const allowedMimeTypePattern =
 @Controller("sites")
 @UseGuards(JwtAuthGuard)
 export class DocumentsController {
-  public constructor(@Inject(DocumentsService) private readonly documentsService: DocumentsService) {}
+  public constructor(
+    @Inject(DocumentsService) private readonly documentsService: DocumentsService,
+  ) {}
 
   @Post(":siteId/documents")
   @HttpCode(HttpStatus.CREATED)
@@ -75,8 +77,14 @@ export class DocumentsController {
   })
   @ApiCreatedResponse({ description: "Document uploadé avec succès.", type: DocumentResponseDto })
   @ApiBadRequestResponse({ description: "Données invalides.", type: ApiErrorResponseDto })
-  @ApiUnauthorizedResponse({ description: "Token JWT manquant ou invalide.", type: ApiErrorResponseDto })
-  @ApiForbiddenResponse({ description: "Rôle Chef de chantier ou Administrateur requis.", type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({
+    description: "Token JWT manquant ou invalide.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiForbiddenResponse({
+    description: "Rôle Chef de chantier ou Administrateur requis.",
+    type: ApiErrorResponseDto,
+  })
   @ApiNotFoundResponse({ description: "Chantier introuvable.", type: ApiErrorResponseDto })
   public uploadDocument(
     @Param("siteId", new ParseUUIDPipe({ version: "4" })) siteId: string,
@@ -86,7 +94,10 @@ export class DocumentsController {
         validators: [
           new MaxFileSizeValidator({ maxSize: maxFileSizeBytes }),
           // skipMagicNumbersValidation : la validation du contenu réel sera faite au stockage (US-2203).
-          new FileTypeValidator({ fileType: allowedMimeTypePattern, skipMagicNumbersValidation: true }),
+          new FileTypeValidator({
+            fileType: allowedMimeTypePattern,
+            skipMagicNumbersValidation: true,
+          }),
         ],
       }),
     )
@@ -99,7 +110,10 @@ export class DocumentsController {
   @Get(":siteId/documents")
   @ApiParam({ name: "siteId", type: String })
   @ApiOkResponse({ description: "Liste des documents du chantier.", type: DocumentListResponseDto })
-  @ApiUnauthorizedResponse({ description: "Token JWT manquant ou invalide.", type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({
+    description: "Token JWT manquant ou invalide.",
+    type: ApiErrorResponseDto,
+  })
   @ApiNotFoundResponse({ description: "Chantier introuvable.", type: ApiErrorResponseDto })
   public listDocuments(
     @Param("siteId", new ParseUUIDPipe({ version: "4" })) siteId: string,

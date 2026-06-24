@@ -66,14 +66,8 @@ export class DocumentsService {
     return { documents, siteId };
   }
 
-  private async assertSiteInOrganization(
-    siteId: string,
-    organizationId: string,
-  ): Promise<void> {
-    const exists = await this.documentsRepository.siteExistsInOrganization(
-      siteId,
-      organizationId,
-    );
+  private async assertSiteInOrganization(siteId: string, organizationId: string): Promise<void> {
+    const exists = await this.documentsRepository.siteExistsInOrganization(siteId, organizationId);
 
     if (!exists) {
       throw new NotFoundException(["Le chantier est introuvable."]);

@@ -38,10 +38,7 @@ const containerName = "uploads";
 export class DocumentsRepository implements DocumentsRepositoryPort {
   public constructor(@Inject(DatabaseService) private readonly databaseService: DatabaseService) {}
 
-  public async siteExistsInOrganization(
-    siteId: string,
-    organizationId: string,
-  ): Promise<boolean> {
+  public async siteExistsInOrganization(siteId: string, organizationId: string): Promise<boolean> {
     const result = await this.databaseService.query<{ readonly id: string }>(
       `SELECT id FROM sites WHERE id = $1 AND organization_id = $2`,
       [siteId, organizationId],
