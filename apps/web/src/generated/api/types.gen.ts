@@ -166,6 +166,27 @@ export type HealthResponseDto = {
     timestamp: string;
 };
 
+export type CreatePhaseRequestDto = {
+    name: string;
+    description?: string | null;
+    startDate?: string | null;
+    estimatedDurationDays?: number | null;
+};
+
+export type PhaseResponseDto = {
+    id: string;
+    siteId: string;
+    name: string;
+    description: string | null;
+    position: number;
+    startDate: string | null;
+    estimatedDurationDays: number | null;
+    progressPercent: number;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
 export type CreateSiteRequestDto = {
     name: string;
     address?: string | null;
@@ -665,6 +686,45 @@ export type HealthControllerGetHealthResponses = {
 };
 
 export type HealthControllerGetHealthResponse = HealthControllerGetHealthResponses[keyof HealthControllerGetHealthResponses];
+
+export type PhasesControllerCreatePhaseData = {
+    body: CreatePhaseRequestDto;
+    path: {
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/phases';
+};
+
+export type PhasesControllerCreatePhaseErrors = {
+    /**
+     * Données phase invalides.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type PhasesControllerCreatePhaseError = PhasesControllerCreatePhaseErrors[keyof PhasesControllerCreatePhaseErrors];
+
+export type PhasesControllerCreatePhaseResponses = {
+    /**
+     * Phase créée avec succès.
+     */
+    201: PhaseResponseDto;
+};
+
+export type PhasesControllerCreatePhaseResponse = PhasesControllerCreatePhaseResponses[keyof PhasesControllerCreatePhaseResponses];
 
 export type SitesControllerCreateSiteData = {
     body: CreateSiteRequestDto;
