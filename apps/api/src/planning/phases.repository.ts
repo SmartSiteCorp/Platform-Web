@@ -48,13 +48,7 @@ export class PhasesRepository implements PhasesRepositoryPort {
           status,
           created_at, updated_at
       `,
-      [
-        input.siteId,
-        input.name,
-        input.description,
-        input.startDate,
-        input.estimatedDurationDays,
-      ],
+      [input.siteId, input.name, input.description, input.startDate, input.estimatedDurationDays],
     );
 
     const phase = result.rows[0];
