@@ -6,6 +6,7 @@ import { DatabaseModule } from "./database/database.module.js";
 import { DocumentsModule } from "./documents/documents.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { OrganizationsModule } from "./organizations/organizations.module.js";
+import { PlanningModule } from "./planning/planning.module.js";
 import { getEnvironmentFilePaths } from "./shared/config/environment.js";
 import { SitesModule } from "./sites/sites.module.js";
 
@@ -21,6 +22,7 @@ import { SitesModule } from "./sites/sites.module.js";
     DocumentsModule,
     HealthModule,
     OrganizationsModule,
+    PlanningModule,
     SitesModule,
   ],
 })
