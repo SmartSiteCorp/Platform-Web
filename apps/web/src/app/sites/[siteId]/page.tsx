@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { SitePage } from "@/components/sites/site-page";
 
 export const metadata: Metadata = {
-  description: "Fiche chantier SmartSite — documents et suivi.",
+  description: "Fiche chantier SmartSite — planning, documents et suivi.",
   title: "Fiche chantier - SmartSite",
 };
 
