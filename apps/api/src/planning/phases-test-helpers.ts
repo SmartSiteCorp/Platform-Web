@@ -7,6 +7,7 @@ import { phaseCreatedAuditAction } from "./phases.types.js";
 export interface PhaseAuditLogDatabaseRow extends QueryResultRow {
   readonly action: string;
   readonly actor_user_id: string;
+  readonly changed_fields: string[];
   readonly metadata: JsonObject;
   readonly organization_id: string;
 }
@@ -16,8 +17,11 @@ export interface PhaseDatabaseRow extends QueryResultRow {
   readonly site_id: string;
   readonly name: string;
   readonly description: string | null;
+  readonly estimated_duration_days: number | null;
   readonly position: number;
+  readonly start_date: string | null;
   readonly status: string;
+  readonly updated_at: Date;
 }
 
 export async function findPersistedPhase(
@@ -25,7 +29,20 @@ export async function findPersistedPhase(
   phaseId: string,
 ): Promise<PhaseDatabaseRow | null> {
   const result = await databaseService.query<PhaseDatabaseRow>(
-    `SELECT id, site_id, name, description, position, status FROM phases WHERE id = $1`,
+    `
+      SELECT
+        id,
+        site_id,
+        name,
+        description,
+        estimated_duration_days,
+        position,
+        start_date::text AS start_date,
+        status,
+        updated_at
+      FROM phases
+      WHERE id = $1
+    `,
     [phaseId],
   );
 
@@ -49,7 +66,21 @@ export async function findPhasesBySiteOrdered(
   siteId: string,
 ): Promise<readonly PhaseDatabaseRow[]> {
   const result = await databaseService.query<PhaseDatabaseRow>(
-    `SELECT id, site_id, name, description, position, status FROM phases WHERE site_id = $1 ORDER BY position ASC`,
+    `
+      SELECT
+        id,
+        site_id,
+        name,
+        description,
+        estimated_duration_days,
+        position,
+        start_date::text AS start_date,
+        status,
+        updated_at
+      FROM phases
+      WHERE site_id = $1
+      ORDER BY position ASC
+    `,
     [siteId],
   );
 
@@ -59,16 +90,17 @@ export async function findPhasesBySiteOrdered(
 export async function findPhaseAuditLog(
   databaseService: DatabaseService,
   phaseId: string,
+  action = phaseCreatedAuditAction,
 ): Promise<PhaseAuditLogDatabaseRow | null> {
   const result = await databaseService.query<PhaseAuditLogDatabaseRow>(
     `
-      SELECT organization_id, actor_user_id, action, metadata
+      SELECT organization_id, actor_user_id, action, changed_fields, metadata
       FROM organization_audit_logs
       WHERE action = $1 AND metadata->>'phaseId' = $2
       ORDER BY created_at DESC
       LIMIT 1
     `,
-    [phaseCreatedAuditAction, phaseId],
+    [action, phaseId],
   );
 
   return result.rows[0] ?? null;

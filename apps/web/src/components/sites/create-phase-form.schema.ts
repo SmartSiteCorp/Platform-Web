@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import type { CreatePhaseRequestDto } from "@/generated/api";
+import type {
+  CreatePhaseRequestDto,
+  PhaseResponseDto,
+  UpdatePhaseRequestDto,
+} from "@/generated/api";
 
 const phaseNameMaxLength = 180;
 const phaseDescriptionMaxLength = 1000;
@@ -38,6 +42,24 @@ export const createPhaseFormDefaultValues: CreatePhaseFormValues = {
 };
 
 export function buildCreatePhaseRequest(values: CreatePhaseFormValues): CreatePhaseRequestDto {
+  return buildPhaseRequest(values);
+}
+
+export function buildUpdatePhaseRequest(values: CreatePhaseFormValues): UpdatePhaseRequestDto {
+  return buildPhaseRequest(values);
+}
+
+export function buildPhaseFormValues(phase: PhaseResponseDto): CreatePhaseFormValues {
+  return {
+    description: phase.description ?? "",
+    estimatedDurationDays:
+      phase.estimatedDurationDays === null ? "" : String(phase.estimatedDurationDays),
+    name: phase.name,
+    startDate: phase.startDate ?? "",
+  };
+}
+
+function buildPhaseRequest(values: CreatePhaseFormValues): CreatePhaseRequestDto {
   const durationStr = values.estimatedDurationDays.trim();
 
   return {
