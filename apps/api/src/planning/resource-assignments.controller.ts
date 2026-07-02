@@ -29,6 +29,7 @@ import type { AuthenticatedRequest } from "../auth/authenticated-request.js";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard.js";
 import { ApiErrorResponseDto } from "../shared/http/api-error-response.dto.js";
 import {
+  AssignableWorkersResponseDto,
   AssignPhaseWorkersRequestDto,
   PhaseWorkerAssignmentsResponseDto,
   WorkerAssignedTasksResponseDto,
@@ -96,6 +97,28 @@ export class ResourceAssignmentsController {
     @Req() req: AuthenticatedRequest,
   ): Promise<PhaseWorkerAssignmentsResponseDto> {
     return this.resourceAssignmentsService.listPhaseWorkerAssignments(siteId, phaseId, req.auth);
+  }
+
+  @Get(":siteId/assignable-workers")
+  @ApiParam({ name: "siteId", type: String })
+  @ApiOkResponse({
+    description: "Ouvriers assignables au chantier.",
+    type: AssignableWorkersResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Token JWT manquant ou invalide.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiForbiddenResponse({
+    description: "Rôle Chef de chantier ou Administrateur et accès au chantier requis.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiNotFoundResponse({ description: "Chantier introuvable.", type: ApiErrorResponseDto })
+  public listAssignableWorkers(
+    @Param("siteId", new ParseUUIDPipe({ version: "4" })) siteId: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AssignableWorkersResponseDto> {
+    return this.resourceAssignmentsService.listAssignableWorkers(siteId, req.auth);
   }
 
   @Get(":siteId/my-tasks")

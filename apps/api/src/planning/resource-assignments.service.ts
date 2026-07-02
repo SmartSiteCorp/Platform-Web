@@ -9,6 +9,7 @@ import {
 import type { AccessTokenPayload } from "../auth/auth.types.js";
 import { OrganizationsService } from "../organizations/organizations.service.js";
 import type {
+  AssignableWorkersResponseDto,
   AssignPhaseWorkersRequestDto,
   PhaseWorkerAssignmentsResponseDto,
   WorkerAssignedTasksResponseDto,
@@ -67,6 +68,20 @@ export class ResourceAssignmentsService {
     );
 
     return { assignments, phaseId, siteId };
+  }
+
+  public async listAssignableWorkers(
+    siteId: string,
+    user: AccessTokenPayload,
+  ): Promise<AssignableWorkersResponseDto> {
+    await this.assertCanManageResources(siteId, user);
+
+    const workers = await this.resourceAssignmentsRepository.listAssignableWorkers(
+      siteId,
+      user.organizationId,
+    );
+
+    return { siteId, workers };
   }
 
   public async listMyAssignedTasks(

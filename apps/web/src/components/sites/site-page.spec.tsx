@@ -1,12 +1,17 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { DocumentResponseDto, RegisterResponseDto } from "@/generated/api";
+import type {
+  DocumentResponseDto,
+  RegisterResponseDto,
+  WorkerAssignedTaskResponseDto,
+} from "@/generated/api";
 import { createTestAccessToken } from "@/test/create-test-access-token";
 import type { ListDocumentsResult } from "@/lib/documents";
 import { SitePage } from "./site-page";
 import type { UploadDocumentSubmitter } from "./upload-document-form";
 import type { DocumentDownloader, ListDocumentsLoader } from "./site-documents-section";
+import type { WorkerAssignedTasksLoader } from "./worker-assigned-tasks-section";
 
 const routerMock = vi.hoisted(() => ({
   push: vi.fn<(url: string) => void>(),
@@ -64,6 +69,17 @@ const testDocument: DocumentResponseDto = {
   title: "Plan de masse",
 };
 
+const workerTask: WorkerAssignedTaskResponseDto = {
+  description: null,
+  dueDate: "2026-07-10",
+  id: "task-id",
+  phaseId: "phase-id",
+  phaseName: "Gros œuvre",
+  siteId: "site-id",
+  status: "todo",
+  title: "Préparer les fondations",
+};
+
 const SITE_ID = "site-id";
 
 describe("SitePage - session", () => {
@@ -90,6 +106,26 @@ describe("SitePage - session", () => {
     renderPage(createEmptyListLoader(), createSuccessUploader());
 
     expect(await screen.findByRole("heading", { name: "Fiche chantier" })).toBeInTheDocument();
+  });
+
+  it("affiche les taches assignees pour un ouvrier", async () => {
+    sessionMock.session = {
+      ...registeredAccount,
+      user: { ...registeredAccount.user, roles: ["ouvrier"] },
+    };
+
+    renderPage(
+      createEmptyListLoader(),
+      createSuccessUploader(),
+      createNoOpDownloader(),
+      createWorkerTasksLoader([workerTask]),
+    );
+
+    expect(await screen.findByRole("heading", { name: "Mes tâches chantier" })).toBeInTheDocument();
+    expect(screen.getByText("Préparer les fondations")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("form", { name: "Formulaire création phase" }),
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -236,10 +272,12 @@ function renderPage(
   listDocumentsLoader: ListDocumentsLoader,
   submitUpload: UploadDocumentSubmitter,
   downloadDocumentLoader: DocumentDownloader = createNoOpDownloader(),
+  loadWorkerAssignedTasksLoader: WorkerAssignedTasksLoader = createWorkerTasksLoader([]),
 ): void {
   render(
     <SitePage
       downloadDocumentLoader={downloadDocumentLoader}
+      loadWorkerAssignedTasksLoader={loadWorkerAssignedTasksLoader}
       listDocumentsLoader={listDocumentsLoader}
       siteId={SITE_ID}
       submitUpload={submitUpload}
@@ -259,6 +297,12 @@ function createListLoaderWithDocuments(
 
 function createSuccessUploader(): UploadDocumentSubmitter {
   return () => Promise.resolve({ document: testDocument, ok: true });
+}
+
+function createWorkerTasksLoader(
+  tasks: readonly WorkerAssignedTaskResponseDto[],
+): WorkerAssignedTasksLoader {
+  return () => Promise.resolve({ ok: true, siteId: SITE_ID, tasks, workerUserId: "worker-id" });
 }
 
 function selectTestFile(): void {

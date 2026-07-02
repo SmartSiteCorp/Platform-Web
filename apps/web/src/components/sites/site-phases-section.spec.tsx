@@ -5,6 +5,11 @@ import type { PhaseResponseDto, UpdatePhaseRequestDto } from "@/generated/api";
 
 import type { CreatePhaseSubmitter } from "./create-phase-form";
 import type { UpdatePhaseSubmitter } from "./edit-phase-form";
+import type {
+  AssignableWorkersLoader,
+  AssignPhaseWorkersSubmitter,
+  PhaseWorkerAssignmentsLoader,
+} from "./phase-resource-assignment-panel";
 import { SitePhasesSection } from "./site-phases-section";
 
 const firstPhase: PhaseResponseDto = {
@@ -169,6 +174,9 @@ function renderSection(
 ): void {
   render(
     <SitePhasesSection
+      loadAssignableWorkers={createEmptyAssignableWorkersLoader()}
+      loadPhaseWorkerAssignments={createEmptyPhaseWorkerAssignmentsLoader()}
+      submitAssignWorkers={createAssignWorkersSubmitter()}
       submitCreatePhase={submitCreatePhase}
       submitUpdatePhase={submitUpdatePhase}
     />,
@@ -202,4 +210,16 @@ function fillAndSubmitPhaseForm(name: string, estimatedDurationDays: string): vo
 
 function createUpdateSubmitter(phase: PhaseResponseDto): UpdatePhaseSubmitter {
   return () => Promise.resolve({ ok: true, phase });
+}
+
+function createEmptyAssignableWorkersLoader(): AssignableWorkersLoader {
+  return (siteId) => Promise.resolve({ ok: true, siteId, workers: [] });
+}
+
+function createEmptyPhaseWorkerAssignmentsLoader(): PhaseWorkerAssignmentsLoader {
+  return (siteId, phaseId) => Promise.resolve({ assignments: [], ok: true, phaseId, siteId });
+}
+
+function createAssignWorkersSubmitter(): AssignPhaseWorkersSubmitter {
+  return (siteId, phaseId) => Promise.resolve({ assignments: [], ok: true, phaseId, siteId });
 }
