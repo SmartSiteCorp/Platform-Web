@@ -4,12 +4,19 @@ import type { QueryResultRow } from "pg";
 import { DatabaseService } from "../database/database.service.js";
 import type { DatabaseExecutor, JsonObject } from "../database/database.types.js";
 import type {
+  AssignableWorkerDetails,
   AssignPhaseWorkersInput,
   PhaseWorkerAssignmentDetails,
   ResourceAssignmentsRepositoryPort,
   WorkerAssignedTaskDetails,
 } from "./resource-assignments.types.js";
 import { phaseWorkersAssignedAuditAction } from "./resource-assignments.types.js";
+
+interface AssignableWorkerRow extends QueryResultRow {
+  readonly first_name: string;
+  readonly last_name: string;
+  readonly worker_user_id: string;
+}
 
 interface PhaseWorkerAssignmentRow extends QueryResultRow {
   readonly assigned_at: Date;
@@ -106,6 +113,42 @@ export class ResourceAssignmentsRepository implements ResourceAssignmentsReposit
     );
 
     return result.rows.map((row) => row.id);
+  }
+
+  public async listAssignableWorkers(
+    siteId: string,
+    organizationId: string,
+  ): Promise<readonly AssignableWorkerDetails[]> {
+    const result = await this.databaseService.query<AssignableWorkerRow>(
+      `
+        SELECT
+          users.id AS worker_user_id,
+          users.first_name,
+          users.last_name
+        FROM users
+        WHERE users.organization_id = $1
+          AND users.status = 'active'
+          AND EXISTS (
+            SELECT 1
+            FROM user_roles
+            INNER JOIN roles ON roles.id = user_roles.role_id
+            WHERE user_roles.user_id = users.id
+              AND roles.code = 'ouvrier'
+          )
+          AND EXISTS (
+            SELECT 1
+            FROM site_members
+            INNER JOIN roles ON roles.id = site_members.role_id
+            WHERE site_members.site_id = $2
+              AND site_members.user_id = users.id
+              AND roles.code = 'ouvrier'
+          )
+        ORDER BY lower(users.last_name), lower(users.first_name), users.id
+      `,
+      [organizationId, siteId],
+    );
+
+    return result.rows.map((row) => this.mapAssignableWorker(row));
   }
 
   public async assignWorkersToPhase(
@@ -254,6 +297,14 @@ export class ResourceAssignmentsRepository implements ResourceAssignmentsReposit
       siteId: row.site_id,
       workerFirstName: row.worker_first_name,
       workerLastName: row.worker_last_name,
+      workerUserId: row.worker_user_id,
+    };
+  }
+
+  private mapAssignableWorker(row: AssignableWorkerRow): AssignableWorkerDetails {
+    return {
+      firstName: row.first_name,
+      lastName: row.last_name,
       workerUserId: row.worker_user_id,
     };
   }

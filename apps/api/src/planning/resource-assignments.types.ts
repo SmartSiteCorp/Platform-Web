@@ -7,6 +7,12 @@ export interface PhaseWorkerAssignmentDetails {
   readonly workerUserId: string;
 }
 
+export interface AssignableWorkerDetails {
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly workerUserId: string;
+}
+
 export interface WorkerAssignedTaskDetails {
   readonly description: string | null;
   readonly dueDate: string | null;
@@ -35,6 +41,10 @@ export interface ResourceAssignmentsRepositoryPort {
     organizationId: string,
     workerUserIds: readonly string[],
   ): Promise<readonly string[]>;
+  listAssignableWorkers(
+    siteId: string,
+    organizationId: string,
+  ): Promise<readonly AssignableWorkerDetails[]>;
   assignWorkersToPhase(
     input: AssignPhaseWorkersInput,
   ): Promise<readonly PhaseWorkerAssignmentDetails[]>;

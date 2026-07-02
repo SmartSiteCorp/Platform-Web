@@ -31,6 +31,7 @@ import {
   findResourceAssignmentAuditLog,
 } from "./resource-assignments-test-helpers.js";
 import type {
+  AssignableWorkersResponseDto,
   PhaseWorkerAssignmentsResponseDto,
   WorkerAssignedTasksResponseDto,
 } from "./resource-assignments.dto.js";
@@ -106,6 +107,28 @@ it("assigne des ouvriers a une phase et persiste les affectations", async () => 
     siteId: site.id,
   });
   expect(auditLog?.metadata).not.toHaveProperty("workerUserIds");
+});
+
+it("liste les ouvriers assignables au chantier sans donnees sensibles", async () => {
+  const account = await createChefChantierAccount();
+  const site = await createSite(account);
+  const workerA = await createWorkerOnSite(account.response.organization.id, site.id);
+  const workerB = await createWorkerOnSite(account.response.organization.id, site.id);
+  await createOrganizationUser(databaseService, account.response.organization.id, ["ouvrier"]);
+
+  const response = await request(getHttpServer())
+    .get(`/api/sites/${site.id}/assignable-workers`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .expect(200);
+  const responseBody = parseAssignableWorkersResponse(response);
+
+  expect(responseBody.siteId).toBe(site.id);
+  expect(responseBody.workers.map((worker) => worker.workerUserId).sort()).toStrictEqual(
+    [workerA.id, workerB.id].sort(),
+  );
+  expect(response.text).not.toContain("password");
+  expect(response.text).not.toContain("accessToken");
+  expect(response.text).not.toContain("@smartsite.test");
 });
 
 it("permet a un ouvrier d'etre assigne a plusieurs phases", async () => {
@@ -319,6 +342,10 @@ function parsePhaseWorkerAssignmentsResponse(
   response: Response,
 ): PhaseWorkerAssignmentsResponseDto {
   return JSON.parse(response.text) as PhaseWorkerAssignmentsResponseDto;
+}
+
+function parseAssignableWorkersResponse(response: Response): AssignableWorkersResponseDto {
+  return JSON.parse(response.text) as AssignableWorkersResponseDto;
 }
 
 function parseWorkerAssignedTasksResponse(response: Response): WorkerAssignedTasksResponseDto {

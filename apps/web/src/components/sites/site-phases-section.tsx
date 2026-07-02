@@ -11,13 +11,25 @@ import type { PhaseResponseDto } from "@/generated/api";
 
 import { CreatePhaseForm, type CreatePhaseSubmitter } from "./create-phase-form";
 import { EditPhaseForm, type UpdatePhaseSubmitter } from "./edit-phase-form";
+import {
+  PhaseResourceAssignmentPanel,
+  type AssignableWorkersLoader,
+  type AssignPhaseWorkersSubmitter,
+  type PhaseWorkerAssignmentsLoader,
+} from "./phase-resource-assignment-panel";
 
 interface SitePhasesSectionProps {
+  readonly loadAssignableWorkers: AssignableWorkersLoader;
+  readonly loadPhaseWorkerAssignments: PhaseWorkerAssignmentsLoader;
+  readonly submitAssignWorkers: AssignPhaseWorkersSubmitter;
   readonly submitCreatePhase: CreatePhaseSubmitter;
   readonly submitUpdatePhase: UpdatePhaseSubmitter;
 }
 
 export function SitePhasesSection({
+  loadAssignableWorkers,
+  loadPhaseWorkerAssignments,
+  submitAssignWorkers,
   submitCreatePhase,
   submitUpdatePhase,
 }: SitePhasesSectionProps) {
@@ -64,12 +76,15 @@ export function SitePhasesSection({
         <OrganizationFormStatusMessage message={phaseUpdateMessage} tone="success" />
         <PhaseList
           editingPhaseId={editingPhaseId}
+          loadAssignableWorkers={loadAssignableWorkers}
+          loadPhaseWorkerAssignments={loadPhaseWorkerAssignments}
           onCancelEdit={() => {
             setEditingPhaseId(null);
           }}
           onPhaseUpdated={handlePhaseUpdated}
           onStartEdit={handleStartEdit}
           phases={phases}
+          submitAssignWorkers={submitAssignWorkers}
           submitUpdatePhase={submitUpdatePhase}
         />
       </CardContent>
@@ -83,19 +98,25 @@ function comparePhasePosition(first: PhaseResponseDto, second: PhaseResponseDto)
 
 interface PhaseListProps {
   readonly editingPhaseId: string | null;
+  readonly loadAssignableWorkers: AssignableWorkersLoader;
+  readonly loadPhaseWorkerAssignments: PhaseWorkerAssignmentsLoader;
   readonly onCancelEdit: () => void;
   readonly onPhaseUpdated: (phase: PhaseResponseDto) => void;
   readonly onStartEdit: (phaseId: string) => void;
   readonly phases: readonly PhaseResponseDto[];
+  readonly submitAssignWorkers: AssignPhaseWorkersSubmitter;
   readonly submitUpdatePhase: UpdatePhaseSubmitter;
 }
 
 function PhaseList({
   editingPhaseId,
+  loadAssignableWorkers,
+  loadPhaseWorkerAssignments,
   onCancelEdit,
   onPhaseUpdated,
   onStartEdit,
   phases,
+  submitAssignWorkers,
   submitUpdatePhase,
 }: PhaseListProps) {
   if (phases.length === 0) {
@@ -112,10 +133,13 @@ function PhaseList({
         <PhaseItem
           isEditing={editingPhaseId === phase.id}
           key={phase.id}
+          loadAssignableWorkers={loadAssignableWorkers}
+          loadPhaseWorkerAssignments={loadPhaseWorkerAssignments}
           onCancelEdit={onCancelEdit}
           onPhaseUpdated={onPhaseUpdated}
           onStartEdit={onStartEdit}
           phase={phase}
+          submitAssignWorkers={submitAssignWorkers}
           submitUpdatePhase={submitUpdatePhase}
         />
       ))}
@@ -125,19 +149,25 @@ function PhaseList({
 
 interface PhaseItemProps {
   readonly isEditing: boolean;
+  readonly loadAssignableWorkers: AssignableWorkersLoader;
+  readonly loadPhaseWorkerAssignments: PhaseWorkerAssignmentsLoader;
   readonly onCancelEdit: () => void;
   readonly onPhaseUpdated: (phase: PhaseResponseDto) => void;
   readonly onStartEdit: (phaseId: string) => void;
   readonly phase: PhaseResponseDto;
+  readonly submitAssignWorkers: AssignPhaseWorkersSubmitter;
   readonly submitUpdatePhase: UpdatePhaseSubmitter;
 }
 
 function PhaseItem({
   isEditing,
+  loadAssignableWorkers,
+  loadPhaseWorkerAssignments,
   onCancelEdit,
   onPhaseUpdated,
   onStartEdit,
   phase,
+  submitAssignWorkers,
   submitUpdatePhase,
 }: PhaseItemProps) {
   return (
@@ -186,6 +216,12 @@ function PhaseItem({
           submitUpdatePhase={submitUpdatePhase}
         />
       ) : null}
+      <PhaseResourceAssignmentPanel
+        loadAssignableWorkers={loadAssignableWorkers}
+        loadPhaseWorkerAssignments={loadPhaseWorkerAssignments}
+        phase={phase}
+        submitAssignWorkers={submitAssignWorkers}
+      />
     </li>
   );
 }

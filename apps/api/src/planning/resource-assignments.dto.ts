@@ -21,6 +21,25 @@ export class AssignPhaseWorkersRequestDto {
   public readonly workerUserIds!: readonly string[];
 }
 
+export class AssignableWorkerResponseDto {
+  @ApiProperty({ example: "7a6f5c24-1f54-48f4-95f8-25d13e68fb86", type: String })
+  public readonly workerUserId!: string;
+
+  @ApiProperty({ example: "Armand", type: String })
+  public readonly firstName!: string;
+
+  @ApiProperty({ example: "Braud", type: String })
+  public readonly lastName!: string;
+}
+
+export class AssignableWorkersResponseDto {
+  @ApiProperty({ example: "30eb69f8-82cd-4b04-8d88-8a2f64b8d6d8", type: String })
+  public readonly siteId!: string;
+
+  @ApiProperty({ isArray: true, type: AssignableWorkerResponseDto })
+  public readonly workers!: readonly AssignableWorkerResponseDto[];
+}
+
 export class PhaseWorkerAssignmentResponseDto {
   @ApiProperty({ example: "30eb69f8-82cd-4b04-8d88-8a2f64b8d6d8", type: String })
   public readonly siteId!: string;

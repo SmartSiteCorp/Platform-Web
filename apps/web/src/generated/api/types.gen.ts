@@ -213,6 +213,17 @@ export type PhaseWorkerAssignmentsResponseDto = {
     assignments: Array<PhaseWorkerAssignmentResponseDto>;
 };
 
+export type AssignableWorkerResponseDto = {
+    workerUserId: string;
+    firstName: string;
+    lastName: string;
+};
+
+export type AssignableWorkersResponseDto = {
+    siteId: string;
+    workers: Array<AssignableWorkerResponseDto>;
+};
+
 export type WorkerAssignedTaskResponseDto = {
     id: string;
     siteId: string;
@@ -884,6 +895,41 @@ export type ResourceAssignmentsControllerAssignWorkersToPhaseResponses = {
 };
 
 export type ResourceAssignmentsControllerAssignWorkersToPhaseResponse = ResourceAssignmentsControllerAssignWorkersToPhaseResponses[keyof ResourceAssignmentsControllerAssignWorkersToPhaseResponses];
+
+export type ResourceAssignmentsControllerListAssignableWorkersData = {
+    body?: never;
+    path: {
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/assignable-workers';
+};
+
+export type ResourceAssignmentsControllerListAssignableWorkersErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur et accès au chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type ResourceAssignmentsControllerListAssignableWorkersError = ResourceAssignmentsControllerListAssignableWorkersErrors[keyof ResourceAssignmentsControllerListAssignableWorkersErrors];
+
+export type ResourceAssignmentsControllerListAssignableWorkersResponses = {
+    /**
+     * Ouvriers assignables au chantier.
+     */
+    200: AssignableWorkersResponseDto;
+};
+
+export type ResourceAssignmentsControllerListAssignableWorkersResponse = ResourceAssignmentsControllerListAssignableWorkersResponses[keyof ResourceAssignmentsControllerListAssignableWorkersResponses];
 
 export type ResourceAssignmentsControllerListMyAssignedTasksData = {
     body?: never;
