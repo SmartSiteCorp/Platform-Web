@@ -194,6 +194,42 @@ export type UpdatePhaseRequestDto = {
     estimatedDurationDays?: number | null;
 };
 
+export type AssignPhaseWorkersRequestDto = {
+    workerUserIds: Array<string>;
+};
+
+export type PhaseWorkerAssignmentResponseDto = {
+    siteId: string;
+    phaseId: string;
+    workerUserId: string;
+    workerFirstName: string;
+    workerLastName: string;
+    assignedAt: string;
+};
+
+export type PhaseWorkerAssignmentsResponseDto = {
+    siteId: string;
+    phaseId: string;
+    assignments: Array<PhaseWorkerAssignmentResponseDto>;
+};
+
+export type WorkerAssignedTaskResponseDto = {
+    id: string;
+    siteId: string;
+    phaseId: string;
+    phaseName: string;
+    title: string;
+    description?: string | null;
+    status: string;
+    dueDate?: string | null;
+};
+
+export type WorkerAssignedTasksResponseDto = {
+    siteId: string;
+    workerUserId: string;
+    tasks: Array<WorkerAssignedTaskResponseDto>;
+};
+
 export type CreateSiteRequestDto = {
     name: string;
     address?: string | null;
@@ -772,6 +808,117 @@ export type PhasesControllerUpdatePhaseResponses = {
 };
 
 export type PhasesControllerUpdatePhaseResponse = PhasesControllerUpdatePhaseResponses[keyof PhasesControllerUpdatePhaseResponses];
+
+export type ResourceAssignmentsControllerListPhaseWorkerAssignmentsData = {
+    body?: never;
+    path: {
+        phaseId: string;
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/phases/{phaseId}/worker-assignments';
+};
+
+export type ResourceAssignmentsControllerListPhaseWorkerAssignmentsErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur et accès au chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier ou phase introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type ResourceAssignmentsControllerListPhaseWorkerAssignmentsError = ResourceAssignmentsControllerListPhaseWorkerAssignmentsErrors[keyof ResourceAssignmentsControllerListPhaseWorkerAssignmentsErrors];
+
+export type ResourceAssignmentsControllerListPhaseWorkerAssignmentsResponses = {
+    /**
+     * Ouvriers assignés à la phase.
+     */
+    200: PhaseWorkerAssignmentsResponseDto;
+};
+
+export type ResourceAssignmentsControllerListPhaseWorkerAssignmentsResponse = ResourceAssignmentsControllerListPhaseWorkerAssignmentsResponses[keyof ResourceAssignmentsControllerListPhaseWorkerAssignmentsResponses];
+
+export type ResourceAssignmentsControllerAssignWorkersToPhaseData = {
+    body: AssignPhaseWorkersRequestDto;
+    path: {
+        phaseId: string;
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/phases/{phaseId}/worker-assignments';
+};
+
+export type ResourceAssignmentsControllerAssignWorkersToPhaseErrors = {
+    /**
+     * Assignation invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur et accès au chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier ou phase introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type ResourceAssignmentsControllerAssignWorkersToPhaseError = ResourceAssignmentsControllerAssignWorkersToPhaseErrors[keyof ResourceAssignmentsControllerAssignWorkersToPhaseErrors];
+
+export type ResourceAssignmentsControllerAssignWorkersToPhaseResponses = {
+    /**
+     * Ouvriers assignés à la phase.
+     */
+    201: PhaseWorkerAssignmentsResponseDto;
+};
+
+export type ResourceAssignmentsControllerAssignWorkersToPhaseResponse = ResourceAssignmentsControllerAssignWorkersToPhaseResponses[keyof ResourceAssignmentsControllerAssignWorkersToPhaseResponses];
+
+export type ResourceAssignmentsControllerListMyAssignedTasksData = {
+    body?: never;
+    path: {
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/my-tasks';
+};
+
+export type ResourceAssignmentsControllerListMyAssignedTasksErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Ouvrier et accès au chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type ResourceAssignmentsControllerListMyAssignedTasksError = ResourceAssignmentsControllerListMyAssignedTasksErrors[keyof ResourceAssignmentsControllerListMyAssignedTasksErrors];
+
+export type ResourceAssignmentsControllerListMyAssignedTasksResponses = {
+    /**
+     * Tâches visibles par l'ouvrier connecté.
+     */
+    200: WorkerAssignedTasksResponseDto;
+};
+
+export type ResourceAssignmentsControllerListMyAssignedTasksResponse = ResourceAssignmentsControllerListMyAssignedTasksResponses[keyof ResourceAssignmentsControllerListMyAssignedTasksResponses];
 
 export type SitesControllerCreateSiteData = {
     body: CreateSiteRequestDto;
