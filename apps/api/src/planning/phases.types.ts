@@ -22,6 +22,20 @@ export interface CreatePhaseInput {
   readonly estimatedDurationDays: number | null;
 }
 
+export type UpdatePhaseField = "name" | "description" | "startDate" | "estimatedDurationDays";
+
+export interface UpdatePhaseInput {
+  readonly changedFields: readonly UpdatePhaseField[];
+  readonly description?: string | null;
+  readonly estimatedDurationDays?: number | null;
+  readonly name?: string;
+  readonly organizationId: string;
+  readonly phaseId: string;
+  readonly siteId: string;
+  readonly startDate?: string | null;
+  readonly updatedBy: string;
+}
+
 export interface PhasesRepositoryPort {
   siteExistsInOrganization(siteId: string, organizationId: string): Promise<boolean>;
   userCanManageSitePhases(
@@ -30,8 +44,11 @@ export interface PhasesRepositoryPort {
     roleCodes: readonly string[],
   ): Promise<boolean>;
   createPhase(input: CreatePhaseInput): Promise<PhaseDetails>;
+  updatePhase(input: UpdatePhaseInput): Promise<PhaseDetails | null>;
 }
 
 export const phaseCreatedAuditAction = "phase.created";
+
+export const phaseUpdatedAuditAction = "phase.updated";
 
 export const phaseManagementRoleCodes = ["chef_chantier", "administrateur"] as const;

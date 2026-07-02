@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsInt, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, Min } from "class-validator";
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  Min,
+  ValidateIf,
+} from "class-validator";
 
 export const phaseNameMaxLength = 180;
 export const phaseDescriptionMaxLength = 1000;
@@ -32,6 +41,40 @@ export class CreatePhaseRequestDto {
 
   @ApiPropertyOptional({ example: 30, minimum: 1, nullable: true, type: Number })
   @IsOptional()
+  @IsInt({ message: "La durée estimée doit être un entier." })
+  @Min(1, { message: "La durée estimée doit être d'au moins 1 jour." })
+  public readonly estimatedDurationDays?: number | null;
+}
+
+export class UpdatePhaseRequestDto {
+  @ApiPropertyOptional({ example: "Second œuvre", maxLength: phaseNameMaxLength, type: String })
+  @ValidateIf((_request, value: string | null | undefined) => value !== undefined)
+  @IsString({ message: "Le nom de la phase doit être une chaîne de caractères." })
+  @IsNotEmpty({ message: "Le nom de la phase est obligatoire." })
+  @MaxLength(phaseNameMaxLength, { message: "Le nom de la phase est trop long." })
+  public readonly name?: string;
+
+  @ApiPropertyOptional({
+    example: "Cloisons, réseaux et finitions",
+    maxLength: phaseDescriptionMaxLength,
+    nullable: true,
+    type: String,
+  })
+  @ValidateIf((_request, value: string | null | undefined) => value !== undefined && value !== null)
+  @IsString({ message: "La description doit être une chaîne de caractères." })
+  @MaxLength(phaseDescriptionMaxLength, { message: "La description est trop longue." })
+  public readonly description?: string | null;
+
+  @ApiPropertyOptional({ example: "2026-08-01", nullable: true, type: String })
+  @ValidateIf((_request, value: string | null | undefined) => value !== undefined && value !== null)
+  @IsString({ message: "La date de début doit être une chaîne de caractères." })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: "La date de début doit être au format YYYY-MM-DD.",
+  })
+  public readonly startDate?: string | null;
+
+  @ApiPropertyOptional({ example: 20, minimum: 1, nullable: true, type: Number })
+  @ValidateIf((_request, value: number | null | undefined) => value !== undefined && value !== null)
   @IsInt({ message: "La durée estimée doit être un entier." })
   @Min(1, { message: "La durée estimée doit être d'au moins 1 jour." })
   public readonly estimatedDurationDays?: number | null;

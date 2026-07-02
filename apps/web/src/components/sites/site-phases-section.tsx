@@ -1,23 +1,48 @@
 "use client";
 
-import { CalendarDays, Clock, ListOrdered, type LucideIcon } from "lucide-react";
+import { CalendarDays, Clock, ListOrdered, Pencil, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 
+import { OrganizationFormStatusMessage } from "@/components/organization/organization-form-status-message";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PhaseResponseDto } from "@/generated/api";
 
 import { CreatePhaseForm, type CreatePhaseSubmitter } from "./create-phase-form";
+import { EditPhaseForm, type UpdatePhaseSubmitter } from "./edit-phase-form";
 
 interface SitePhasesSectionProps {
   readonly submitCreatePhase: CreatePhaseSubmitter;
+  readonly submitUpdatePhase: UpdatePhaseSubmitter;
 }
 
-export function SitePhasesSection({ submitCreatePhase }: SitePhasesSectionProps) {
+export function SitePhasesSection({
+  submitCreatePhase,
+  submitUpdatePhase,
+}: SitePhasesSectionProps) {
+  const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null);
+  const [phaseUpdateMessage, setPhaseUpdateMessage] = useState<string | null>(null);
   const [phases, setPhases] = useState<readonly PhaseResponseDto[]>([]);
 
   const handlePhaseCreated = (phase: PhaseResponseDto): void => {
+    setPhaseUpdateMessage(null);
     setPhases((prev) => [...prev, phase].sort(comparePhasePosition));
+  };
+
+  const handlePhaseUpdated = (phase: PhaseResponseDto): void => {
+    setPhases((prev) =>
+      prev
+        .map((existingPhase) => (existingPhase.id === phase.id ? phase : existingPhase))
+        .sort(comparePhasePosition),
+    );
+    setEditingPhaseId(null);
+    setPhaseUpdateMessage(`"${phase.name}" a été mise à jour avec succès.`);
+  };
+
+  const handleStartEdit = (phaseId: string): void => {
+    setPhaseUpdateMessage(null);
+    setEditingPhaseId(phaseId);
   };
 
   return (
@@ -36,7 +61,17 @@ export function SitePhasesSection({ submitCreatePhase }: SitePhasesSectionProps)
           onPhaseCreated={handlePhaseCreated}
           submitCreatePhase={submitCreatePhase}
         />
-        <PhaseList phases={phases} />
+        <OrganizationFormStatusMessage message={phaseUpdateMessage} tone="success" />
+        <PhaseList
+          editingPhaseId={editingPhaseId}
+          onCancelEdit={() => {
+            setEditingPhaseId(null);
+          }}
+          onPhaseUpdated={handlePhaseUpdated}
+          onStartEdit={handleStartEdit}
+          phases={phases}
+          submitUpdatePhase={submitUpdatePhase}
+        />
       </CardContent>
     </Card>
   );
@@ -47,10 +82,22 @@ function comparePhasePosition(first: PhaseResponseDto, second: PhaseResponseDto)
 }
 
 interface PhaseListProps {
+  readonly editingPhaseId: string | null;
+  readonly onCancelEdit: () => void;
+  readonly onPhaseUpdated: (phase: PhaseResponseDto) => void;
+  readonly onStartEdit: (phaseId: string) => void;
   readonly phases: readonly PhaseResponseDto[];
+  readonly submitUpdatePhase: UpdatePhaseSubmitter;
 }
 
-function PhaseList({ phases }: PhaseListProps) {
+function PhaseList({
+  editingPhaseId,
+  onCancelEdit,
+  onPhaseUpdated,
+  onStartEdit,
+  phases,
+  submitUpdatePhase,
+}: PhaseListProps) {
   if (phases.length === 0) {
     return (
       <p className="rounded-md border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
@@ -62,17 +109,37 @@ function PhaseList({ phases }: PhaseListProps) {
   return (
     <ol aria-label="Liste des phases chantier" className="space-y-3">
       {phases.map((phase) => (
-        <PhaseItem key={phase.id} phase={phase} />
+        <PhaseItem
+          isEditing={editingPhaseId === phase.id}
+          key={phase.id}
+          onCancelEdit={onCancelEdit}
+          onPhaseUpdated={onPhaseUpdated}
+          onStartEdit={onStartEdit}
+          phase={phase}
+          submitUpdatePhase={submitUpdatePhase}
+        />
       ))}
     </ol>
   );
 }
 
 interface PhaseItemProps {
+  readonly isEditing: boolean;
+  readonly onCancelEdit: () => void;
+  readonly onPhaseUpdated: (phase: PhaseResponseDto) => void;
+  readonly onStartEdit: (phaseId: string) => void;
   readonly phase: PhaseResponseDto;
+  readonly submitUpdatePhase: UpdatePhaseSubmitter;
 }
 
-function PhaseItem({ phase }: PhaseItemProps) {
+function PhaseItem({
+  isEditing,
+  onCancelEdit,
+  onPhaseUpdated,
+  onStartEdit,
+  phase,
+  submitUpdatePhase,
+}: PhaseItemProps) {
   return (
     <li className="rounded-md border border-border bg-background p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -90,12 +157,35 @@ function PhaseItem({ phase }: PhaseItemProps) {
             ) : null}
           </div>
         </div>
-        <Badge tone="muted">{formatPhaseStatus(phase.status)}</Badge>
+        <div className="flex shrink-0 items-center gap-2">
+          <Badge tone="muted">{formatPhaseStatus(phase.status)}</Badge>
+          <Button
+            aria-expanded={isEditing}
+            aria-label={`Modifier la phase ${phase.name}`}
+            className="h-9 px-3"
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              onStartEdit(phase.id);
+            }}
+          >
+            <Pencil aria-hidden="true" className="h-4 w-4" />
+            Modifier
+          </Button>
+        </div>
       </div>
       <div className="mt-4 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
         <PhaseMeta icon={Clock} label={formatDuration(phase.estimatedDurationDays)} />
         <PhaseMeta icon={CalendarDays} label={formatStartDate(phase.startDate)} />
       </div>
+      {isEditing ? (
+        <EditPhaseForm
+          onCancel={onCancelEdit}
+          onPhaseUpdated={onPhaseUpdated}
+          phase={phase}
+          submitUpdatePhase={submitUpdatePhase}
+        />
+      ) : null}
     </li>
   );
 }

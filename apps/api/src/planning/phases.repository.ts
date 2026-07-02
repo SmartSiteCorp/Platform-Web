@@ -2,9 +2,15 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { QueryResultRow } from "pg";
 
 import { DatabaseService } from "../database/database.service.js";
-import type { DatabaseExecutor } from "../database/database.types.js";
-import type { CreatePhaseInput, PhaseDetails, PhasesRepositoryPort } from "./phases.types.js";
-import { phaseCreatedAuditAction } from "./phases.types.js";
+import type { DatabaseExecutor, JsonObject } from "../database/database.types.js";
+import type {
+  CreatePhaseInput,
+  PhaseDetails,
+  PhasesRepositoryPort,
+  UpdatePhaseField,
+  UpdatePhaseInput,
+} from "./phases.types.js";
+import { phaseCreatedAuditAction, phaseUpdatedAuditAction } from "./phases.types.js";
 
 interface PhaseRow extends QueryResultRow {
   readonly id: string;
@@ -89,6 +95,52 @@ export class PhasesRepository implements PhasesRepositoryPort {
     });
   }
 
+  public async updatePhase(input: UpdatePhaseInput): Promise<PhaseDetails | null> {
+    return this.databaseService.withTransaction(async (transaction) => {
+      const changedFields = new Set<UpdatePhaseField>(input.changedFields);
+      const result = await transaction.query<PhaseRow>(
+        `
+          UPDATE phases
+          SET
+            name = CASE WHEN $3::boolean THEN $4 ELSE name END,
+            description = CASE WHEN $5::boolean THEN $6::text ELSE description END,
+            start_date = CASE WHEN $7::boolean THEN $8::date ELSE start_date END,
+            estimated_duration_days = CASE WHEN $9::boolean THEN $10::integer ELSE estimated_duration_days END,
+            updated_at = now()
+          WHERE id = $1 AND site_id = $2
+          RETURNING
+            id, site_id, name, description, position,
+            start_date::text AS start_date,
+            estimated_duration_days,
+            progress_percent::text AS progress_percent,
+            status,
+            created_at, updated_at
+        `,
+        [
+          input.phaseId,
+          input.siteId,
+          changedFields.has("name"),
+          input.name ?? null,
+          changedFields.has("description"),
+          input.description ?? null,
+          changedFields.has("startDate"),
+          input.startDate ?? null,
+          changedFields.has("estimatedDurationDays"),
+          input.estimatedDurationDays ?? null,
+        ],
+      );
+      const phase = result.rows[0];
+
+      if (!phase) {
+        return null;
+      }
+
+      await this.insertPhaseUpdateAuditLog(transaction, input, phase);
+
+      return this.mapPhase(phase);
+    });
+  }
+
   private async lockSitePhasePosition(
     transaction: DatabaseExecutor,
     siteId: string,
@@ -114,6 +166,33 @@ export class PhasesRepository implements PhasesRepositoryPort {
         input.createdBy,
         phaseCreatedAuditAction,
         JSON.stringify({ phaseId: phase.id, position: phase.position, siteId: input.siteId }),
+      ],
+    );
+  }
+
+  private async insertPhaseUpdateAuditLog(
+    transaction: DatabaseExecutor,
+    input: UpdatePhaseInput,
+    phase: PhaseRow,
+  ): Promise<void> {
+    const metadata: JsonObject = {
+      phaseId: phase.id,
+      position: phase.position,
+      siteId: input.siteId,
+    };
+
+    await transaction.query(
+      `
+        INSERT INTO organization_audit_logs
+          (organization_id, actor_user_id, action, changed_fields, metadata)
+        VALUES ($1, $2, $3, $4, $5::jsonb)
+      `,
+      [
+        input.organizationId,
+        input.updatedBy,
+        phaseUpdatedAuditAction,
+        [...input.changedFields],
+        JSON.stringify(metadata),
       ],
     );
   }

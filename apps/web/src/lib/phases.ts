@@ -1,14 +1,38 @@
 import {
   phasesControllerCreatePhase,
+  phasesControllerUpdatePhase,
   type ApiErrorResponseDto,
   type CreatePhaseRequestDto,
   type PhaseResponseDto,
+  type UpdatePhaseRequestDto,
 } from "@/generated/api";
 import { getApiBaseUrl } from "@/lib/api-config";
 
-export type CreatePhaseResult =
-  | { readonly ok: true; readonly phase: PhaseResponseDto }
-  | { readonly message: string; readonly ok: false; readonly sessionExpired?: true };
+type PhaseMutationFailure = {
+  readonly message: string;
+  readonly ok: false;
+  readonly sessionExpired?: true;
+};
+type PhaseMutationSuccess = { readonly ok: true; readonly phase: PhaseResponseDto };
+
+export type CreatePhaseResult = PhaseMutationSuccess | PhaseMutationFailure;
+
+export type UpdatePhaseResult = PhaseMutationSuccess | PhaseMutationFailure;
+
+interface PhaseErrorMessages {
+  readonly defaultMessage: string;
+  readonly forbiddenMessage: string;
+}
+
+const createPhaseErrorMessages: PhaseErrorMessages = {
+  defaultMessage: "La création de la phase a échoué.",
+  forbiddenMessage: "Vous n'avez pas le rôle requis pour créer une phase.",
+};
+
+const updatePhaseErrorMessages: PhaseErrorMessages = {
+  defaultMessage: "La modification de la phase a échoué.",
+  forbiddenMessage: "Vous n'avez pas le rôle requis pour modifier une phase.",
+};
 
 export async function createPhase(
   accessToken: string,
@@ -23,7 +47,35 @@ export async function createPhase(
   });
 
   if (response.error) {
-    return buildPhaseErrorResult(response.error, response.response?.status);
+    return buildPhaseErrorResult(
+      response.error,
+      response.response?.status,
+      createPhaseErrorMessages,
+    );
+  }
+
+  return { ok: true, phase: response.data };
+}
+
+export async function updatePhase(
+  accessToken: string,
+  siteId: string,
+  phaseId: string,
+  request: UpdatePhaseRequestDto,
+): Promise<UpdatePhaseResult> {
+  const response = await phasesControllerUpdatePhase({
+    auth: accessToken,
+    baseUrl: getApiBaseUrl(),
+    body: request,
+    path: { phaseId, siteId },
+  });
+
+  if (response.error) {
+    return buildPhaseErrorResult(
+      response.error,
+      response.response?.status,
+      updatePhaseErrorMessages,
+    );
   }
 
   return { ok: true, phase: response.data };
@@ -32,7 +84,8 @@ export async function createPhase(
 function buildPhaseErrorResult(
   error: ApiErrorResponseDto,
   statusCode: number | undefined,
-): CreatePhaseResult {
+  messages: PhaseErrorMessages,
+): PhaseMutationFailure {
   if (statusCode === 401) {
     return {
       message: "Votre session a expiré. Connectez-vous à nouveau.",
@@ -43,13 +96,13 @@ function buildPhaseErrorResult(
 
   if (statusCode === 403) {
     return {
-      message: "Vous n'avez pas le rôle requis pour créer une phase.",
+      message: messages.forbiddenMessage,
       ok: false,
     };
   }
 
   if (statusCode === 404) {
-    return { message: "Le chantier est introuvable.", ok: false };
+    return { message: "Le chantier ou la phase est introuvable.", ok: false };
   }
 
   if (statusCode === undefined) {
@@ -59,7 +112,7 @@ function buildPhaseErrorResult(
   const apiMessage = error.message.join(" ").trim();
 
   return {
-    message: apiMessage.length > 0 ? apiMessage : "La création de la phase a échoué.",
+    message: apiMessage.length > 0 ? apiMessage : messages.defaultMessage,
     ok: false,
   };
 }

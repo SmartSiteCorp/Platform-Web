@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -17,6 +18,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -26,7 +28,7 @@ import { createHttpValidationPipe } from "../app-http.js";
 import type { AuthenticatedRequest } from "../auth/authenticated-request.js";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard.js";
 import { ApiErrorResponseDto } from "../shared/http/api-error-response.dto.js";
-import { CreatePhaseRequestDto, PhaseResponseDto } from "./phases.dto.js";
+import { CreatePhaseRequestDto, PhaseResponseDto, UpdatePhaseRequestDto } from "./phases.dto.js";
 import { PhasesService } from "./phases.service.js";
 
 @ApiBearerAuth()
@@ -57,5 +59,30 @@ export class PhasesController {
     @Req() req: AuthenticatedRequest,
   ): Promise<PhaseResponseDto> {
     return this.phasesService.createPhase(siteId, request, req.auth);
+  }
+
+  @Patch(":siteId/phases/:phaseId")
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({ name: "siteId", type: String })
+  @ApiParam({ name: "phaseId", type: String })
+  @ApiBody({ type: UpdatePhaseRequestDto })
+  @ApiOkResponse({ description: "Phase modifiée avec succès.", type: PhaseResponseDto })
+  @ApiBadRequestResponse({ description: "Données phase invalides.", type: ApiErrorResponseDto })
+  @ApiUnauthorizedResponse({
+    description: "Token JWT manquant ou invalide.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiForbiddenResponse({
+    description: "Rôle Chef de chantier ou Administrateur et accès au chantier requis.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiNotFoundResponse({ description: "Chantier ou phase introuvable.", type: ApiErrorResponseDto })
+  public updatePhase(
+    @Param("siteId", new ParseUUIDPipe({ version: "4" })) siteId: string,
+    @Param("phaseId", new ParseUUIDPipe({ version: "4" })) phaseId: string,
+    @Body(createHttpValidationPipe(UpdatePhaseRequestDto)) request: UpdatePhaseRequestDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<PhaseResponseDto> {
+    return this.phasesService.updatePhase(siteId, phaseId, request, req.auth);
   }
 }
