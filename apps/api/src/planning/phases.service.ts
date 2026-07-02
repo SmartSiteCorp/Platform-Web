@@ -1,12 +1,14 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 
 import type { AccessTokenPayload } from "../auth/auth.types.js";
 import { OrganizationsService } from "../organizations/organizations.service.js";
 import type { CreatePhaseRequestDto, PhaseResponseDto } from "./phases.dto.js";
 import { PhasesRepository } from "./phases.repository.js";
-import type { CreatePhaseInput, PhasesRepositoryPort } from "./phases.types.js";
-
-const phaseManagementRoleCodes = ["chef_chantier", "administrateur"] as const;
+import {
+  phaseManagementRoleCodes,
+  type CreatePhaseInput,
+  type PhasesRepositoryPort,
+} from "./phases.types.js";
 
 @Injectable()
 export class PhasesService {
@@ -27,11 +29,14 @@ export class PhasesService {
     );
 
     await this.assertSiteInOrganization(siteId, user.organizationId);
+    await this.assertUserCanManageSitePhases(siteId, user.sub);
 
     const input: CreatePhaseInput = {
+      createdBy: user.sub,
       description: request.description?.trim() || null,
       estimatedDurationDays: request.estimatedDurationDays ?? null,
       name: request.name.trim(),
+      organizationId: user.organizationId,
       siteId,
       startDate: request.startDate ?? null,
     };
@@ -44,6 +49,18 @@ export class PhasesService {
 
     if (!exists) {
       throw new NotFoundException(["Le chantier est introuvable."]);
+    }
+  }
+
+  private async assertUserCanManageSitePhases(siteId: string, userId: string): Promise<void> {
+    const hasSiteAccess = await this.phasesRepository.userCanManageSitePhases(
+      siteId,
+      userId,
+      phaseManagementRoleCodes,
+    );
+
+    if (!hasSiteAccess) {
+      throw new ForbiddenException(["Vous n'avez pas accès à ce chantier."]);
     }
   }
 }

@@ -47,7 +47,7 @@ export class PhasesController {
     type: ApiErrorResponseDto,
   })
   @ApiForbiddenResponse({
-    description: "Rôle Chef de chantier ou Administrateur requis.",
+    description: "Rôle Chef de chantier ou Administrateur et accès au chantier requis.",
     type: ApiErrorResponseDto,
   })
   @ApiNotFoundResponse({ description: "Chantier introuvable.", type: ApiErrorResponseDto })

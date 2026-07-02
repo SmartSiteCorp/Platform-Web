@@ -25,3 +25,5 @@ export interface SitesRepositoryPort {
 }
 
 export const siteCreatedAuditAction = "site.created";
+
+export const siteManagementRoleCodes = ["chef_chantier", "administrateur"] as const;

@@ -5,9 +5,11 @@ import { OrganizationsService } from "../organizations/organizations.service.js"
 import type { SiteResponseDto } from "./sites.dto.js";
 import { CreateSiteRequestDto } from "./sites.dto.js";
 import { SitesRepository } from "./sites.repository.js";
-import type { CreateSiteInput, SitesRepositoryPort } from "./sites.types.js";
-
-const siteManagementRoleCodes = ["chef_chantier", "administrateur"] as const;
+import {
+  siteManagementRoleCodes,
+  type CreateSiteInput,
+  type SitesRepositoryPort,
+} from "./sites.types.js";
 
 @Injectable()
 export class SitesService {

@@ -2,7 +2,9 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { QueryResultRow } from "pg";
 
 import { DatabaseService } from "../database/database.service.js";
+import type { DatabaseExecutor } from "../database/database.types.js";
 import type { CreatePhaseInput, PhaseDetails, PhasesRepositoryPort } from "./phases.types.js";
+import { phaseCreatedAuditAction } from "./phases.types.js";
 
 interface PhaseRow extends QueryResultRow {
   readonly id: string;
@@ -31,33 +33,89 @@ export class PhasesRepository implements PhasesRepositoryPort {
     return result.rows.length > 0;
   }
 
-  public async createPhase(input: CreatePhaseInput): Promise<PhaseDetails> {
-    // La position est calculée atomiquement pour garantir l'unicité par chantier.
-    const result = await this.databaseService.query<PhaseRow>(
+  public async userCanManageSitePhases(
+    siteId: string,
+    userId: string,
+    roleCodes: readonly string[],
+  ): Promise<boolean> {
+    const result = await this.databaseService.query<{ readonly site_id: string }>(
       `
-        INSERT INTO phases (site_id, name, description, position, start_date, estimated_duration_days)
-        SELECT
-          $1, $2, $3,
-          COALESCE((SELECT MAX(position) FROM phases WHERE site_id = $1), 0) + 1,
-          $4, $5
-        RETURNING
-          id, site_id, name, description, position,
-          start_date::text AS start_date,
-          estimated_duration_days,
-          progress_percent::text AS progress_percent,
-          status,
-          created_at, updated_at
+        SELECT site_members.site_id
+        FROM site_members
+        INNER JOIN roles ON roles.id = site_members.role_id
+        WHERE site_members.site_id = $1
+          AND site_members.user_id = $2
+          AND roles.code = ANY($3::varchar[])
+        LIMIT 1
       `,
-      [input.siteId, input.name, input.description, input.startDate, input.estimatedDurationDays],
+      [siteId, userId, [...roleCodes]],
     );
 
-    const phase = result.rows[0];
+    return result.rows.length > 0;
+  }
 
-    if (!phase) {
-      throw new Error("La phase n'a pas pu être créée.");
-    }
+  public async createPhase(input: CreatePhaseInput): Promise<PhaseDetails> {
+    return this.databaseService.withTransaction(async (transaction) => {
+      await this.lockSitePhasePosition(transaction, input.siteId);
 
-    return this.mapPhase(phase);
+      const result = await transaction.query<PhaseRow>(
+        `
+          INSERT INTO phases
+            (site_id, name, description, position, start_date, estimated_duration_days)
+          SELECT
+            $1, $2, $3,
+            COALESCE((SELECT MAX(position) FROM phases WHERE site_id = $1), 0) + 1,
+            $4, $5
+          RETURNING
+            id, site_id, name, description, position,
+            start_date::text AS start_date,
+            estimated_duration_days,
+            progress_percent::text AS progress_percent,
+            status,
+            created_at, updated_at
+        `,
+        [input.siteId, input.name, input.description, input.startDate, input.estimatedDurationDays],
+      );
+
+      const phase = result.rows[0];
+
+      if (!phase) {
+        throw new Error("La phase n'a pas pu être créée.");
+      }
+
+      await this.insertPhaseAuditLog(transaction, input, phase);
+
+      return this.mapPhase(phase);
+    });
+  }
+
+  private async lockSitePhasePosition(
+    transaction: DatabaseExecutor,
+    siteId: string,
+  ): Promise<void> {
+    // Le verrou est limité au chantier pour éviter les collisions de position concurrentes.
+    await transaction.query("SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))", [
+      siteId,
+    ]);
+  }
+
+  private async insertPhaseAuditLog(
+    transaction: DatabaseExecutor,
+    input: CreatePhaseInput,
+    phase: PhaseRow,
+  ): Promise<void> {
+    await transaction.query(
+      `
+        INSERT INTO organization_audit_logs (organization_id, actor_user_id, action, metadata)
+        VALUES ($1, $2, $3, $4::jsonb)
+      `,
+      [
+        input.organizationId,
+        input.createdBy,
+        phaseCreatedAuditAction,
+        JSON.stringify({ phaseId: phase.id, position: phase.position, siteId: input.siteId }),
+      ],
+    );
   }
 
   private mapPhase(row: PhaseRow): PhaseDetails {

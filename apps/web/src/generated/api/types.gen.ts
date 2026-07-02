@@ -706,7 +706,7 @@ export type PhasesControllerCreatePhaseErrors = {
      */
     401: ApiErrorResponseDto;
     /**
-     * Rôle Chef de chantier ou Administrateur requis.
+     * Rôle Chef de chantier ou Administrateur et accès au chantier requis.
      */
     403: ApiErrorResponseDto;
     /**
