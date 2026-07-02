@@ -32,7 +32,10 @@ export function SitePhasesSection({ submitCreatePhase }: SitePhasesSectionProps)
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <CreatePhaseForm onPhaseCreated={handlePhaseCreated} submitCreatePhase={submitCreatePhase} />
+        <CreatePhaseForm
+          onPhaseCreated={handlePhaseCreated}
+          submitCreatePhase={submitCreatePhase}
+        />
         <PhaseList phases={phases} />
       </CardContent>
     </Card>

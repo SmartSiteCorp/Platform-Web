@@ -27,7 +27,8 @@ type CreatePhaseApiResult =
     };
 
 const phasesApiMock = vi.hoisted(() => ({
-  phasesControllerCreatePhase: vi.fn<(options: CreatePhaseApiOptions) => Promise<CreatePhaseApiResult>>(),
+  phasesControllerCreatePhase:
+    vi.fn<(options: CreatePhaseApiOptions) => Promise<CreatePhaseApiResult>>(),
 }));
 
 vi.mock("@/generated/api", () => ({

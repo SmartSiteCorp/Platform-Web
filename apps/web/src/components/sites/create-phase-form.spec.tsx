@@ -83,7 +83,9 @@ describe("CreatePhaseForm - soumission", () => {
       name: "Gros œuvre",
       startDate: "2026-07-01",
     });
-    expect(screen.getByText(`"${createdPhase.name}" a été ajoutée avec succès.`)).toBeInTheDocument();
+    expect(
+      screen.getByText(`"${createdPhase.name}" a été ajoutée avec succès.`),
+    ).toBeInTheDocument();
   });
 
   it("soumet avec uniquement le nom quand les champs optionnels sont vides", async () => {

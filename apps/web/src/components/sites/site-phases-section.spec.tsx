@@ -44,7 +44,9 @@ describe("SitePhasesSection", () => {
 
     fillAndSubmitPhaseForm("Gros œuvre", "30");
 
-    expect(await screen.findByText(`"${firstPhase.name}" a été ajoutée avec succès.`)).toBeInTheDocument();
+    expect(
+      await screen.findByText(`"${firstPhase.name}" a été ajoutée avec succès.`),
+    ).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Liste des phases chantier" })).toBeInTheDocument();
     expect(screen.getByText("Gros œuvre")).toBeInTheDocument();
     expect(screen.getByText("30 jours estimés")).toBeInTheDocument();
@@ -77,7 +79,9 @@ describe("SitePhasesSection", () => {
     fillAndSubmitPhaseForm("Gros œuvre", "30");
 
     expect(await screen.findByText("Le chantier est introuvable.")).toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: "Liste des phases chantier" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("list", { name: "Liste des phases chantier" }),
+    ).not.toBeInTheDocument();
   });
 
   it.each([
