@@ -3,9 +3,11 @@
 import { HardHat, Loader2 } from "lucide-react";
 
 import { AppHeader } from "@/components/layout/app-header";
+import { SitePhasesSection } from "@/components/sites/site-phases-section";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { downloadDocument, listDocuments, uploadDocument } from "@/lib/documents";
+import { createPhase } from "@/lib/phases";
 import { useRequiredAuthSession } from "@/lib/use-auth-session";
 
 import {
@@ -13,11 +15,13 @@ import {
   type DocumentDownloader,
   type ListDocumentsLoader,
 } from "./site-documents-section";
+import type { CreatePhaseSubmitter } from "./create-phase-form";
 import type { UploadDocumentSubmitter } from "./upload-document-form";
 
 interface SitePageProps {
   readonly downloadDocumentLoader?: DocumentDownloader;
   readonly listDocumentsLoader?: ListDocumentsLoader;
+  readonly submitCreatePhase?: CreatePhaseSubmitter;
   readonly siteId: string;
   readonly submitUpload?: UploadDocumentSubmitter;
 }
@@ -25,6 +29,7 @@ interface SitePageProps {
 export function SitePage({
   downloadDocumentLoader,
   listDocumentsLoader,
+  submitCreatePhase,
   siteId,
   submitUpload,
 }: SitePageProps) {
@@ -45,6 +50,20 @@ export function SitePage({
         });
       }
       return listDocuments(session.accessToken, id);
+    });
+
+  const phaseSubmitter: CreatePhaseSubmitter =
+    submitCreatePhase ??
+    ((request) => {
+      if (!session) {
+        return Promise.resolve({
+          message: "Votre session a expiré. Connectez-vous à nouveau.",
+          ok: false as const,
+          sessionExpired: true as const,
+        });
+      }
+
+      return createPhase(session.accessToken, siteId, request);
     });
 
   const uploader: UploadDocumentSubmitter =
@@ -77,12 +96,15 @@ export function SitePage({
       <AppHeader activeItem="dashboard" />
       <section className="container py-8">
         <SitePageIntro />
-        <SiteDocumentsSection
-          downloadDocument={downloader}
-          listDocuments={loader}
-          siteId={siteId}
-          submitUpload={uploader}
-        />
+        <div className="space-y-6">
+          <SitePhasesSection submitCreatePhase={phaseSubmitter} />
+          <SiteDocumentsSection
+            downloadDocument={downloader}
+            listDocuments={loader}
+            siteId={siteId}
+            submitUpload={uploader}
+          />
+        </div>
       </section>
     </main>
   );
@@ -114,7 +136,7 @@ function SitePageIntro() {
           Fiche chantier
         </h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Consultez et gérez les documents associés à ce chantier.
+          Consultez le planning et gérez les documents associés à ce chantier.
         </p>
       </div>
     </div>
