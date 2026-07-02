@@ -13,6 +13,8 @@ export interface PhaseDetails {
 }
 
 export interface CreatePhaseInput {
+  readonly createdBy: string;
+  readonly organizationId: string;
   readonly siteId: string;
   readonly name: string;
   readonly description: string | null;
@@ -22,5 +24,14 @@ export interface CreatePhaseInput {
 
 export interface PhasesRepositoryPort {
   siteExistsInOrganization(siteId: string, organizationId: string): Promise<boolean>;
+  userCanManageSitePhases(
+    siteId: string,
+    userId: string,
+    roleCodes: readonly string[],
+  ): Promise<boolean>;
   createPhase(input: CreatePhaseInput): Promise<PhaseDetails>;
 }
+
+export const phaseCreatedAuditAction = "phase.created";
+
+export const phaseManagementRoleCodes = ["chef_chantier", "administrateur"] as const;

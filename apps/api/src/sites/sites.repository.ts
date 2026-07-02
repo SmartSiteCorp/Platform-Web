@@ -2,8 +2,9 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { QueryResultRow } from "pg";
 
 import { DatabaseService } from "../database/database.service.js";
+import type { DatabaseExecutor } from "../database/database.types.js";
 import type { CreateSiteInput, SiteDetails, SitesRepositoryPort } from "./sites.types.js";
-import { siteCreatedAuditAction } from "./sites.types.js";
+import { siteCreatedAuditAction, siteManagementRoleCodes } from "./sites.types.js";
 
 interface SiteRow extends QueryResultRow {
   readonly id: string;
@@ -50,6 +51,8 @@ export class SitesRepository implements SitesRepositoryPort {
         throw new Error("Le chantier n'a pas pu être créé.");
       }
 
+      await this.insertSiteCreatorMembership(transaction, site.id, input.createdBy);
+
       // Journalisation atomique avec la création du chantier.
       await transaction.query(
         `
@@ -66,6 +69,25 @@ export class SitesRepository implements SitesRepositoryPort {
 
       return this.mapSite(site);
     });
+  }
+
+  private async insertSiteCreatorMembership(
+    transaction: DatabaseExecutor,
+    siteId: string,
+    userId: string,
+  ): Promise<void> {
+    await transaction.query(
+      `
+        INSERT INTO site_members (site_id, user_id, role_id)
+        SELECT $1, $2, roles.id
+        FROM roles
+        INNER JOIN user_roles ON user_roles.role_id = roles.id
+        WHERE user_roles.user_id = $2
+          AND roles.code = ANY($3::varchar[])
+        ON CONFLICT DO NOTHING
+      `,
+      [siteId, userId, [...siteManagementRoleCodes]],
+    );
   }
 
   private mapSite(row: SiteRow): SiteDetails {
