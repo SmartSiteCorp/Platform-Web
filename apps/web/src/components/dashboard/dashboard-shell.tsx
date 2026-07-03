@@ -1,35 +1,67 @@
 "use client";
 
-import { Boxes, FileText, Loader2, ShieldCheck } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import { OrganizationFormStatusMessage } from "@/components/organization/organization-form-status-message";
 import { AppHeader } from "@/components/layout/app-header";
-import { isOrganizationAdmin } from "@/lib/auth-session";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { OrganizationFormStatusMessage } from "@/components/organization/organization-form-status-message";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { RegisterResponseDto, SiteManagerDashboardResponseDto } from "@/generated/api";
+import { clearAuthSession, isOrganizationAdmin } from "@/lib/auth-session";
+import { loadSiteManagerDashboard, type LoadSiteManagerDashboardResult } from "@/lib/dashboard";
 import { useRequiredAuthSession } from "@/lib/use-auth-session";
-import { dashboardStats, dashboardTasks, moduleStats } from "./dashboard-data";
-import { StatCard } from "./stat-card";
+import { SiteManagerDashboard } from "./site-manager-dashboard";
 
-function SiteCreatedNotification() {
-  const searchParams = useSearchParams();
+export type SiteManagerDashboardLoader = (
+  accessToken: string,
+  siteId: string | null,
+) => Promise<LoadSiteManagerDashboardResult>;
 
-  if (searchParams.get("created") !== "1") {
-    return null;
-  }
-
-  return (
-    <div className="mb-6">
-      <OrganizationFormStatusMessage message="Chantier créé avec succès." tone="success" />
-    </div>
-  );
+interface DashboardShellProps {
+  readonly dashboardLoader?: SiteManagerDashboardLoader;
 }
 
-export function DashboardShell() {
+type DashboardLoadMode = "background" | "initial" | "manual";
+
+type DashboardLoadState =
+  | {
+      readonly dashboard: null;
+      readonly isRefreshing: false;
+      readonly message: null;
+      readonly status: "loading";
+    }
+  | {
+      readonly dashboard: null;
+      readonly isRefreshing: false;
+      readonly message: string;
+      readonly status: "error";
+    }
+  | {
+      readonly dashboard: SiteManagerDashboardResponseDto;
+      readonly isRefreshing: boolean;
+      readonly message: null;
+      readonly status: "success";
+    };
+
+interface DashboardAuthenticatedContentProps {
+  readonly dashboardLoader: SiteManagerDashboardLoader;
+  readonly session: RegisterResponseDto;
+}
+
+interface UseSiteManagerDashboardParams {
+  readonly accessToken: string;
+  readonly dashboardLoader: SiteManagerDashboardLoader;
+  readonly siteId: string | null;
+}
+
+const dashboardLoginPath = "/login";
+
+export function DashboardShell({
+  dashboardLoader = loadSiteManagerDashboard,
+}: DashboardShellProps) {
   const { isCheckingSession, session } = useRequiredAuthSession();
 
   if (isCheckingSession || !session) {
@@ -41,25 +73,105 @@ export function DashboardShell() {
       <AppHeader activeItem="dashboard" showSettingsLink={isOrganizationAdmin(session)} />
 
       <section className="container py-8">
-        <Suspense>
-          <SiteCreatedNotification />
+        <Suspense fallback={<DashboardLoadingCard message="Chargement du dashboard..." />}>
+          <DashboardAuthenticatedContent dashboardLoader={dashboardLoader} session={session} />
         </Suspense>
-        <DashboardIntro />
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {dashboardStats.map((stat) => (
-            <StatCard key={stat.label} stat={stat} />
-          ))}
-        </div>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
-          <SiteProgressPanel />
-          <FieldPrioritiesPanel />
-        </div>
-
-        <SmartSitePrinciples />
       </section>
     </main>
+  );
+}
+
+function DashboardAuthenticatedContent({
+  dashboardLoader,
+  session,
+}: DashboardAuthenticatedContentProps) {
+  const searchParams = useSearchParams();
+  const siteId = searchParams.get("siteId");
+  const { loadState, refreshDashboard } = useSiteManagerDashboard({
+    accessToken: session.accessToken,
+    dashboardLoader,
+    siteId,
+  });
+  const handleRefresh = useCallback(() => {
+    void refreshDashboard("manual");
+  }, [refreshDashboard]);
+
+  return (
+    <>
+      <SiteCreatedNotification isVisible={searchParams.get("created") === "1"} />
+      <DashboardBody loadState={loadState} onRefresh={handleRefresh} />
+    </>
+  );
+}
+
+function useSiteManagerDashboard({
+  accessToken,
+  dashboardLoader,
+  siteId,
+}: UseSiteManagerDashboardParams) {
+  const router = useRouter();
+  const [loadState, setLoadState] = useState<DashboardLoadState>({
+    dashboard: null,
+    isRefreshing: false,
+    message: null,
+    status: "loading",
+  });
+  const handleSessionExpired = useCallback(() => {
+    clearAuthSession();
+    router.replace(dashboardLoginPath);
+  }, [router]);
+  const refreshDashboard = useCallback(
+    async (mode: DashboardLoadMode) => {
+      startDashboardLoad(mode, setLoadState);
+      const result = await dashboardLoader(accessToken, siteId);
+      applyDashboardLoadResult(result, setLoadState, handleSessionExpired);
+    },
+    [accessToken, dashboardLoader, handleSessionExpired, siteId],
+  );
+  const refreshIntervalMilliseconds = getRefreshIntervalMilliseconds(loadState);
+
+  useEffect(() => {
+    void refreshDashboard("initial");
+  }, [refreshDashboard]);
+
+  useEffect(() => {
+    if (refreshIntervalMilliseconds === null) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void refreshDashboard("background");
+    }, refreshIntervalMilliseconds);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [refreshDashboard, refreshIntervalMilliseconds]);
+
+  return { loadState, refreshDashboard };
+}
+
+function DashboardBody({
+  loadState,
+  onRefresh,
+}: {
+  readonly loadState: DashboardLoadState;
+  readonly onRefresh: () => void;
+}) {
+  if (loadState.status === "loading") {
+    return <DashboardLoadingCard message="Chargement des chantiers accessibles..." />;
+  }
+
+  if (loadState.status === "error") {
+    return <DashboardErrorCard message={loadState.message} onRetry={onRefresh} />;
+  }
+
+  return (
+    <SiteManagerDashboard
+      dashboard={loadState.dashboard}
+      isRefreshing={loadState.isRefreshing}
+      onRefresh={onRefresh}
+    />
   );
 }
 
@@ -68,113 +180,111 @@ function DashboardSessionLoading() {
     <main className="min-h-screen bg-background">
       <AppHeader activeItem="dashboard" />
       <section className="container py-8">
-        <Card>
-          <CardContent className="flex min-h-48 items-center justify-center gap-3 p-8 text-muted-foreground">
-            <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" />
-            <span>Vérification de la session...</span>
-          </CardContent>
-        </Card>
+        <DashboardLoadingCard message="Vérification de la session..." />
       </section>
     </main>
   );
 }
 
-function DashboardIntro() {
-  return (
-    <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-      <div>
-        <Badge tone="success">Plateforme Web</Badge>
-        <h1 className="mt-3 text-3xl font-bold tracking-normal">Tableau de bord SmartSite</h1>
-        <p className="mt-2 max-w-2xl text-muted-foreground">
-          Base initiale connectée au modèle SaaS SmartSite : organisations, chantiers, tâches,
-          drones, BIM, IA et documents.
-        </p>
-      </div>
-      <Badge tone="muted">Backend API prêt pour Swagger et OpenAPI</Badge>
-    </div>
-  );
-}
-
-function SiteProgressPanel() {
+function DashboardLoadingCard({ message }: { readonly message: string }) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Avancement chantier pilote</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4 flex items-center justify-between">
-          <span className="text-sm font-medium text-muted-foreground">
-            Maison individuelle - Lyon
-          </span>
-          <span className="text-sm font-bold">68%</span>
-        </div>
-        <Progress value={68} />
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
-          {moduleStats.map((stat) => (
-            <StatCard key={stat.label} stat={stat} />
-          ))}
-        </div>
+      <CardContent className="flex min-h-48 items-center justify-center gap-3 p-8 text-muted-foreground">
+        <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" />
+        <span>{message}</span>
       </CardContent>
     </Card>
   );
 }
 
-function FieldPrioritiesPanel() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Priorités terrain</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {dashboardTasks.map((task) => (
-          <div
-            key={task.label}
-            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background p-3"
-          >
-            <div className="flex items-center gap-3">
-              <Boxes className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">{task.label}</span>
-            </div>
-            <Badge tone={task.status === "Bloqué" ? "danger" : "default"}>{task.status}</Badge>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function SmartSitePrinciples() {
-  return (
-    <div className="mt-6 grid gap-4 md:grid-cols-2">
-      <PrincipleCard
-        icon={ShieldCheck}
-        message="Permissions prévues par organisation, rôle global et appartenance chantier."
-        tone="accent"
-      />
-      <PrincipleCard
-        icon={FileText}
-        message="Les fichiers lourds seront stockés hors base, avec métadonnées centralisées."
-        tone="primary"
-      />
-    </div>
-  );
-}
-
-interface PrincipleCardProps {
-  readonly icon: LucideIcon;
+function DashboardErrorCard({
+  message,
+  onRetry,
+}: {
   readonly message: string;
-  readonly tone: "accent" | "primary";
-}
-
-function PrincipleCard({ icon: Icon, message, tone }: PrincipleCardProps) {
-  const iconColor = tone === "accent" ? "text-accent" : "text-primary";
-
+  readonly onRetry: () => void;
+}) {
   return (
     <Card>
-      <CardContent className="flex items-center gap-4 p-5">
-        <Icon className={`h-8 w-8 ${iconColor}`} />
-        <p className="text-sm text-muted-foreground">{message}</p>
+      <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-3">
+          <AlertTriangle aria-hidden="true" className="mt-0.5 h-5 w-5 text-destructive" />
+          <div>
+            <h1 className="text-lg font-semibold">Dashboard indisponible</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{message}</p>
+          </div>
+        </div>
+        <Button onClick={onRetry} variant="secondary">
+          <RefreshCw aria-hidden="true" className="h-4 w-4" />
+          Réessayer
+        </Button>
       </CardContent>
     </Card>
   );
+}
+
+function SiteCreatedNotification({ isVisible }: { readonly isVisible: boolean }) {
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <div className="mb-6">
+      <OrganizationFormStatusMessage message="Chantier créé avec succès." tone="success" />
+    </div>
+  );
+}
+
+function startDashboardLoad(
+  mode: DashboardLoadMode,
+  setLoadState: Dispatch<SetStateAction<DashboardLoadState>>,
+): void {
+  setLoadState((currentState) => {
+    if (mode !== "initial" && currentState.status === "success") {
+      return { ...currentState, isRefreshing: true };
+    }
+
+    return {
+      dashboard: null,
+      isRefreshing: false,
+      message: null,
+      status: "loading",
+    };
+  });
+}
+
+function applyDashboardLoadResult(
+  result: LoadSiteManagerDashboardResult,
+  setLoadState: Dispatch<SetStateAction<DashboardLoadState>>,
+  onSessionExpired: () => void,
+): void {
+  if (result.ok) {
+    setLoadState({
+      dashboard: result.dashboard,
+      isRefreshing: false,
+      message: null,
+      status: "success",
+    });
+    return;
+  }
+
+  if (result.sessionExpired) {
+    onSessionExpired();
+    return;
+  }
+
+  setLoadState({
+    dashboard: null,
+    isRefreshing: false,
+    message: result.message,
+    status: "error",
+  });
+}
+
+function getRefreshIntervalMilliseconds(loadState: DashboardLoadState): number | null {
+  if (loadState.status !== "success") {
+    return null;
+  }
+
+  return Math.max(loadState.dashboard.refreshIntervalSeconds, 15) * 1000;
 }
