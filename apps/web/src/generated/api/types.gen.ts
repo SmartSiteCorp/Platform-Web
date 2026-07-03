@@ -739,8 +739,8 @@ export type OrganizationInvitationsControllerAcceptInvitationResponse = Organiza
 export type OrganizationUserRolesControllerGetUserRolesData = {
     body?: never;
     path: {
-        organizationId: string;
         userId: string;
+        organizationId: string;
     };
     query?: never;
     url: '/api/organizations/{organizationId}/users/{userId}/roles';
@@ -772,8 +772,8 @@ export type OrganizationUserRolesControllerGetUserRolesResponse = OrganizationUs
 export type OrganizationUserRolesControllerAddUserRoleData = {
     body: AddOrganizationUserRoleRequestDto;
     path: {
-        organizationId: string;
         userId: string;
+        organizationId: string;
     };
     query?: never;
     url: '/api/organizations/{organizationId}/users/{userId}/roles';
@@ -809,8 +809,8 @@ export type OrganizationUserRolesControllerAddUserRoleResponse = OrganizationUse
 export type OrganizationUserRolesControllerUpdateUserRolesData = {
     body: UpdateOrganizationUserRolesRequestDto;
     path: {
-        organizationId: string;
         userId: string;
+        organizationId: string;
     };
     query?: never;
     url: '/api/organizations/{organizationId}/users/{userId}/roles';
@@ -846,9 +846,9 @@ export type OrganizationUserRolesControllerUpdateUserRolesResponse = Organizatio
 export type OrganizationUserRolesControllerRemoveUserRoleData = {
     body?: never;
     path: {
-        organizationId: string;
-        userId: string;
         roleCode: string;
+        userId: string;
+        organizationId: string;
     };
     query?: never;
     url: '/api/organizations/{organizationId}/users/{userId}/roles/{roleCode}';
@@ -958,8 +958,8 @@ export type DocumentsControllerUploadDocumentResponse = DocumentsControllerUploa
 export type DocumentsControllerDownloadDocumentData = {
     body?: never;
     path: {
-        siteId: string;
         documentId: string;
+        siteId: string;
     };
     query?: never;
     url: '/api/sites/{siteId}/documents/{documentId}/download';
@@ -1040,8 +1040,8 @@ export type PhasesControllerCreatePhaseResponse = PhasesControllerCreatePhaseRes
 export type PhasesControllerUpdatePhaseData = {
     body: UpdatePhaseRequestDto;
     path: {
-        siteId: string;
         phaseId: string;
+        siteId: string;
     };
     query?: never;
     url: '/api/sites/{siteId}/phases/{phaseId}';
@@ -1080,8 +1080,8 @@ export type PhasesControllerUpdatePhaseResponse = PhasesControllerUpdatePhaseRes
 export type ResourceAssignmentsControllerListPhaseWorkerAssignmentsData = {
     body?: never;
     path: {
-        siteId: string;
         phaseId: string;
+        siteId: string;
     };
     query?: never;
     url: '/api/sites/{siteId}/phases/{phaseId}/worker-assignments';
@@ -1116,8 +1116,8 @@ export type ResourceAssignmentsControllerListPhaseWorkerAssignmentsResponse = Re
 export type ResourceAssignmentsControllerAssignWorkersToPhaseData = {
     body: AssignPhaseWorkersRequestDto;
     path: {
-        siteId: string;
         phaseId: string;
+        siteId: string;
     };
     query?: never;
     url: '/api/sites/{siteId}/phases/{phaseId}/worker-assignments';
