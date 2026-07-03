@@ -3,7 +3,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, DocumentsControllerDownloadDocumentData, DocumentsControllerDownloadDocumentErrors, DocumentsControllerDownloadDocumentResponses, DocumentsControllerListDocumentsData, DocumentsControllerListDocumentsErrors, DocumentsControllerListDocumentsResponses, DocumentsControllerUploadDocumentData, DocumentsControllerUploadDocumentErrors, DocumentsControllerUploadDocumentResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerListOrganizationUsersData, OrganizationsControllerListOrganizationUsersErrors, OrganizationsControllerListOrganizationUsersResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses, OrganizationUserRolesControllerAddUserRoleData, OrganizationUserRolesControllerAddUserRoleErrors, OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerGetUserRolesData, OrganizationUserRolesControllerGetUserRolesErrors, OrganizationUserRolesControllerGetUserRolesResponses, OrganizationUserRolesControllerRemoveUserRoleData, OrganizationUserRolesControllerRemoveUserRoleErrors, OrganizationUserRolesControllerRemoveUserRoleResponses, OrganizationUserRolesControllerUpdateUserRolesData, OrganizationUserRolesControllerUpdateUserRolesErrors, OrganizationUserRolesControllerUpdateUserRolesResponses, PhasesControllerCreatePhaseData, PhasesControllerCreatePhaseErrors, PhasesControllerCreatePhaseResponses, PhasesControllerUpdatePhaseData, PhasesControllerUpdatePhaseErrors, PhasesControllerUpdatePhaseResponses, ResourceAssignmentsControllerAssignWorkersToPhaseData, ResourceAssignmentsControllerAssignWorkersToPhaseErrors, ResourceAssignmentsControllerAssignWorkersToPhaseResponses, ResourceAssignmentsControllerListAssignableWorkersData, ResourceAssignmentsControllerListAssignableWorkersErrors, ResourceAssignmentsControllerListAssignableWorkersResponses, ResourceAssignmentsControllerListMyAssignedTasksData, ResourceAssignmentsControllerListMyAssignedTasksErrors, ResourceAssignmentsControllerListMyAssignedTasksResponses, ResourceAssignmentsControllerListPhaseWorkerAssignmentsData, ResourceAssignmentsControllerListPhaseWorkerAssignmentsErrors, ResourceAssignmentsControllerListPhaseWorkerAssignmentsResponses, SitesControllerCreateSiteData, SitesControllerCreateSiteErrors, SitesControllerCreateSiteResponses } from './types.gen';
+import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, DashboardControllerGetSiteManagerDashboardData, DashboardControllerGetSiteManagerDashboardErrors, DashboardControllerGetSiteManagerDashboardResponses, DocumentsControllerDownloadDocumentData, DocumentsControllerDownloadDocumentErrors, DocumentsControllerDownloadDocumentResponses, DocumentsControllerListDocumentsData, DocumentsControllerListDocumentsErrors, DocumentsControllerListDocumentsResponses, DocumentsControllerUploadDocumentData, DocumentsControllerUploadDocumentErrors, DocumentsControllerUploadDocumentResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerListOrganizationUsersData, OrganizationsControllerListOrganizationUsersErrors, OrganizationsControllerListOrganizationUsersResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses, OrganizationUserRolesControllerAddUserRoleData, OrganizationUserRolesControllerAddUserRoleErrors, OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerGetUserRolesData, OrganizationUserRolesControllerGetUserRolesErrors, OrganizationUserRolesControllerGetUserRolesResponses, OrganizationUserRolesControllerRemoveUserRoleData, OrganizationUserRolesControllerRemoveUserRoleErrors, OrganizationUserRolesControllerRemoveUserRoleResponses, OrganizationUserRolesControllerUpdateUserRolesData, OrganizationUserRolesControllerUpdateUserRolesErrors, OrganizationUserRolesControllerUpdateUserRolesResponses, PhasesControllerCreatePhaseData, PhasesControllerCreatePhaseErrors, PhasesControllerCreatePhaseResponses, PhasesControllerUpdatePhaseData, PhasesControllerUpdatePhaseErrors, PhasesControllerUpdatePhaseResponses, ResourceAssignmentsControllerAssignWorkersToPhaseData, ResourceAssignmentsControllerAssignWorkersToPhaseErrors, ResourceAssignmentsControllerAssignWorkersToPhaseResponses, ResourceAssignmentsControllerListAssignableWorkersData, ResourceAssignmentsControllerListAssignableWorkersErrors, ResourceAssignmentsControllerListAssignableWorkersResponses, ResourceAssignmentsControllerListMyAssignedTasksData, ResourceAssignmentsControllerListMyAssignedTasksErrors, ResourceAssignmentsControllerListMyAssignedTasksResponses, ResourceAssignmentsControllerListPhaseWorkerAssignmentsData, ResourceAssignmentsControllerListPhaseWorkerAssignmentsErrors, ResourceAssignmentsControllerListPhaseWorkerAssignmentsResponses, SitesControllerCreateSiteData, SitesControllerCreateSiteErrors, SitesControllerCreateSiteResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -37,26 +37,9 @@ export const authControllerLogin = <ThrowOnError extends boolean = false>(option
     }
 });
 
-export const documentsControllerListDocuments = <ThrowOnError extends boolean = false>(options: Options<DocumentsControllerListDocumentsData, ThrowOnError>) => (options.client ?? client).get<DocumentsControllerListDocumentsResponses, DocumentsControllerListDocumentsErrors, ThrowOnError>({
+export const dashboardControllerGetSiteManagerDashboard = <ThrowOnError extends boolean = false>(options?: Options<DashboardControllerGetSiteManagerDashboardData, ThrowOnError>) => (options?.client ?? client).get<DashboardControllerGetSiteManagerDashboardResponses, DashboardControllerGetSiteManagerDashboardErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/sites/{siteId}/documents',
-    ...options
-});
-
-export const documentsControllerUploadDocument = <ThrowOnError extends boolean = false>(options: Options<DocumentsControllerUploadDocumentData, ThrowOnError>) => (options.client ?? client).post<DocumentsControllerUploadDocumentResponses, DocumentsControllerUploadDocumentErrors, ThrowOnError>({
-    ...formDataBodySerializer,
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/sites/{siteId}/documents',
-    ...options,
-    headers: {
-        'Content-Type': null,
-        ...options.headers
-    }
-});
-
-export const documentsControllerDownloadDocument = <ThrowOnError extends boolean = false>(options: Options<DocumentsControllerDownloadDocumentData, ThrowOnError>) => (options.client ?? client).get<DocumentsControllerDownloadDocumentResponses, DocumentsControllerDownloadDocumentErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/sites/{siteId}/documents/{documentId}/download',
+    url: '/api/dashboard/site-manager',
     ...options
 });
 
@@ -130,6 +113,29 @@ export const organizationUserRolesControllerUpdateUserRoles = <ThrowOnError exte
 export const organizationUserRolesControllerRemoveUserRole = <ThrowOnError extends boolean = false>(options: Options<OrganizationUserRolesControllerRemoveUserRoleData, ThrowOnError>) => (options.client ?? client).delete<OrganizationUserRolesControllerRemoveUserRoleResponses, OrganizationUserRolesControllerRemoveUserRoleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/organizations/{organizationId}/users/{userId}/roles/{roleCode}',
+    ...options
+});
+
+export const documentsControllerListDocuments = <ThrowOnError extends boolean = false>(options: Options<DocumentsControllerListDocumentsData, ThrowOnError>) => (options.client ?? client).get<DocumentsControllerListDocumentsResponses, DocumentsControllerListDocumentsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/sites/{siteId}/documents',
+    ...options
+});
+
+export const documentsControllerUploadDocument = <ThrowOnError extends boolean = false>(options: Options<DocumentsControllerUploadDocumentData, ThrowOnError>) => (options.client ?? client).post<DocumentsControllerUploadDocumentResponses, DocumentsControllerUploadDocumentErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/sites/{siteId}/documents',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+export const documentsControllerDownloadDocument = <ThrowOnError extends boolean = false>(options: Options<DocumentsControllerDownloadDocumentData, ThrowOnError>) => (options.client ?? client).get<DocumentsControllerDownloadDocumentResponses, DocumentsControllerDownloadDocumentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/sites/{siteId}/documents/{documentId}/download',
     ...options
 });
 
