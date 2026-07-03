@@ -58,27 +58,92 @@ export type LoginResponseDto = {
     accessToken: string;
 };
 
-export type DocumentFileResponseDto = {
-    id: string;
-    originalName: string;
-    mimeType: string;
-    sizeBytes: number;
-    createdAt: string;
+export type SiteManagerDashboardStatsResponseDto = {
+    accessibleSitesCount: number;
+    activeSitesCount: number;
+    globalProgressPercent: number;
+    taskInProgressCount: number;
+    taskCompletedCount: number;
+    activeWorkersCount: number;
+    activeAlertsCount: number;
+    criticalAlertsCount: number;
+    upcomingDeadlinesCount: number;
 };
 
-export type DocumentResponseDto = {
+export type SiteManagerDashboardSiteResponseDto = {
+    id: string;
+    name: string;
+    address?: string | null;
+    status: string;
+    progressPercent: number;
+    taskTotalCount: number;
+    taskInProgressCount: number;
+    taskCompletedCount: number;
+    activeWorkersCount: number;
+    activeAlertsCount: number;
+    criticalAlertsCount: number;
+    nextDeadlineAt?: string | null;
+    detailsPath: string;
+};
+
+export type SiteManagerDashboardAlertResponseDto = {
     id: string;
     siteId: string;
-    fileId: string;
+    siteName: string;
+    type: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    description: string;
+    recommendation?: string | null;
+    status: string;
+    detectedAt: string;
+    detailsPath: string;
+};
+
+export type SiteManagerDashboardDeadlineResponseDto = {
+    id: string;
+    siteId: string;
+    siteName: string;
+    kind: 'site' | 'phase' | 'task';
+    label: string;
+    status: string;
+    dueDate: string;
+    detailsPath: string;
+};
+
+export type SiteManagerDashboardNavigationShortcutResponseDto = {
+    label: string;
+    description: string;
+    path: string;
+    siteId?: string | null;
+    type: string;
+};
+
+export type SiteManagerDashboardDataSourceResponseDto = {
+    key: string;
+    label: string;
+    status: 'available' | 'empty' | 'unavailable';
+    message: string;
+};
+
+export type SiteManagerDashboardEmptyStateResponseDto = {
     title: string;
-    documentType: 'devis' | 'plan' | 'rapport' | 'contrat' | 'autre';
-    file: DocumentFileResponseDto;
-    createdAt: string;
+    message: string;
 };
 
-export type DocumentListResponseDto = {
-    siteId: string;
-    documents: Array<DocumentResponseDto>;
+export type SiteManagerDashboardResponseDto = {
+    organizationId: string;
+    siteId?: string | null;
+    generatedAt: string;
+    refreshMode: string;
+    refreshIntervalSeconds: number;
+    realTimeAvailable: boolean;
+    stats: SiteManagerDashboardStatsResponseDto;
+    sites: Array<SiteManagerDashboardSiteResponseDto>;
+    alerts: Array<SiteManagerDashboardAlertResponseDto>;
+    upcomingDeadlines: Array<SiteManagerDashboardDeadlineResponseDto>;
+    navigationShortcuts: Array<SiteManagerDashboardNavigationShortcutResponseDto>;
+    dataSources: Array<SiteManagerDashboardDataSourceResponseDto>;
+    emptyState?: SiteManagerDashboardEmptyStateResponseDto | null;
 };
 
 export type OrganizationResponseDto = {
@@ -158,6 +223,29 @@ export type AddOrganizationUserRoleRequestDto = {
 
 export type UpdateOrganizationUserRolesRequestDto = {
     roleCodes: Array<string>;
+};
+
+export type DocumentFileResponseDto = {
+    id: string;
+    originalName: string;
+    mimeType: string;
+    sizeBytes: number;
+    createdAt: string;
+};
+
+export type DocumentResponseDto = {
+    id: string;
+    siteId: string;
+    fileId: string;
+    title: string;
+    documentType: 'devis' | 'plan' | 'rapport' | 'contrat' | 'autre';
+    file: DocumentFileResponseDto;
+    createdAt: string;
+};
+
+export type DocumentListResponseDto = {
+    siteId: string;
+    documents: Array<DocumentResponseDto>;
 };
 
 export type HealthResponseDto = {
@@ -317,53 +405,21 @@ export type AuthControllerLoginResponses = {
 
 export type AuthControllerLoginResponse = AuthControllerLoginResponses[keyof AuthControllerLoginResponses];
 
-export type DocumentsControllerListDocumentsData = {
+export type DashboardControllerGetSiteManagerDashboardData = {
     body?: never;
-    path: {
-        siteId: string;
+    path?: never;
+    query?: {
+        /**
+         * Filtre optionnel sur un chantier accessible au chef de chantier.
+         */
+        siteId?: string;
     };
-    query?: never;
-    url: '/api/sites/{siteId}/documents';
+    url: '/api/dashboard/site-manager';
 };
 
-export type DocumentsControllerListDocumentsErrors = {
+export type DashboardControllerGetSiteManagerDashboardErrors = {
     /**
-     * Token JWT manquant ou invalide.
-     */
-    401: ApiErrorResponseDto;
-    /**
-     * Chantier introuvable.
-     */
-    404: ApiErrorResponseDto;
-};
-
-export type DocumentsControllerListDocumentsError = DocumentsControllerListDocumentsErrors[keyof DocumentsControllerListDocumentsErrors];
-
-export type DocumentsControllerListDocumentsResponses = {
-    /**
-     * Liste des documents du chantier.
-     */
-    200: DocumentListResponseDto;
-};
-
-export type DocumentsControllerListDocumentsResponse = DocumentsControllerListDocumentsResponses[keyof DocumentsControllerListDocumentsResponses];
-
-export type DocumentsControllerUploadDocumentData = {
-    body: {
-        documentType: 'devis' | 'plan' | 'rapport' | 'contrat' | 'autre';
-        file: Blob | File;
-        title: string;
-    };
-    path: {
-        siteId: string;
-    };
-    query?: never;
-    url: '/api/sites/{siteId}/documents';
-};
-
-export type DocumentsControllerUploadDocumentErrors = {
-    /**
-     * Données invalides.
+     * Filtre dashboard invalide.
      */
     400: ApiErrorResponseDto;
     /**
@@ -371,7 +427,7 @@ export type DocumentsControllerUploadDocumentErrors = {
      */
     401: ApiErrorResponseDto;
     /**
-     * Rôle Chef de chantier ou Administrateur requis.
+     * Rôle Chef de chantier ou Administrateur et accès chantier requis.
      */
     403: ApiErrorResponseDto;
     /**
@@ -380,46 +436,16 @@ export type DocumentsControllerUploadDocumentErrors = {
     404: ApiErrorResponseDto;
 };
 
-export type DocumentsControllerUploadDocumentError = DocumentsControllerUploadDocumentErrors[keyof DocumentsControllerUploadDocumentErrors];
+export type DashboardControllerGetSiteManagerDashboardError = DashboardControllerGetSiteManagerDashboardErrors[keyof DashboardControllerGetSiteManagerDashboardErrors];
 
-export type DocumentsControllerUploadDocumentResponses = {
+export type DashboardControllerGetSiteManagerDashboardResponses = {
     /**
-     * Document uploadé avec succès.
+     * Agrégation du dashboard chef de chantier.
      */
-    201: DocumentResponseDto;
+    200: SiteManagerDashboardResponseDto;
 };
 
-export type DocumentsControllerUploadDocumentResponse = DocumentsControllerUploadDocumentResponses[keyof DocumentsControllerUploadDocumentResponses];
-
-export type DocumentsControllerDownloadDocumentData = {
-    body?: never;
-    path: {
-        documentId: string;
-        siteId: string;
-    };
-    query?: never;
-    url: '/api/sites/{siteId}/documents/{documentId}/download';
-};
-
-export type DocumentsControllerDownloadDocumentErrors = {
-    /**
-     * Token JWT manquant ou invalide.
-     */
-    401: ApiErrorResponseDto;
-    /**
-     * Chantier ou document introuvable.
-     */
-    404: ApiErrorResponseDto;
-};
-
-export type DocumentsControllerDownloadDocumentError = DocumentsControllerDownloadDocumentErrors[keyof DocumentsControllerDownloadDocumentErrors];
-
-export type DocumentsControllerDownloadDocumentResponses = {
-    /**
-     * Contenu binaire du document.
-     */
-    200: unknown;
-};
+export type DashboardControllerGetSiteManagerDashboardResponse = DashboardControllerGetSiteManagerDashboardResponses[keyof DashboardControllerGetSiteManagerDashboardResponses];
 
 export type OrganizationsControllerGetOrganizationData = {
     body?: never;
@@ -727,6 +753,110 @@ export type OrganizationUserRolesControllerRemoveUserRoleResponses = {
 };
 
 export type OrganizationUserRolesControllerRemoveUserRoleResponse = OrganizationUserRolesControllerRemoveUserRoleResponses[keyof OrganizationUserRolesControllerRemoveUserRoleResponses];
+
+export type DocumentsControllerListDocumentsData = {
+    body?: never;
+    path: {
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/documents';
+};
+
+export type DocumentsControllerListDocumentsErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DocumentsControllerListDocumentsError = DocumentsControllerListDocumentsErrors[keyof DocumentsControllerListDocumentsErrors];
+
+export type DocumentsControllerListDocumentsResponses = {
+    /**
+     * Liste des documents du chantier.
+     */
+    200: DocumentListResponseDto;
+};
+
+export type DocumentsControllerListDocumentsResponse = DocumentsControllerListDocumentsResponses[keyof DocumentsControllerListDocumentsResponses];
+
+export type DocumentsControllerUploadDocumentData = {
+    body: {
+        documentType: 'devis' | 'plan' | 'rapport' | 'contrat' | 'autre';
+        file: Blob | File;
+        title: string;
+    };
+    path: {
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/documents';
+};
+
+export type DocumentsControllerUploadDocumentErrors = {
+    /**
+     * Données invalides.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DocumentsControllerUploadDocumentError = DocumentsControllerUploadDocumentErrors[keyof DocumentsControllerUploadDocumentErrors];
+
+export type DocumentsControllerUploadDocumentResponses = {
+    /**
+     * Document uploadé avec succès.
+     */
+    201: DocumentResponseDto;
+};
+
+export type DocumentsControllerUploadDocumentResponse = DocumentsControllerUploadDocumentResponses[keyof DocumentsControllerUploadDocumentResponses];
+
+export type DocumentsControllerDownloadDocumentData = {
+    body?: never;
+    path: {
+        documentId: string;
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/documents/{documentId}/download';
+};
+
+export type DocumentsControllerDownloadDocumentErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Chantier ou document introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DocumentsControllerDownloadDocumentError = DocumentsControllerDownloadDocumentErrors[keyof DocumentsControllerDownloadDocumentErrors];
+
+export type DocumentsControllerDownloadDocumentResponses = {
+    /**
+     * Contenu binaire du document.
+     */
+    200: unknown;
+};
 
 export type HealthControllerGetHealthData = {
     body?: never;
