@@ -146,6 +146,91 @@ export type SiteManagerDashboardResponseDto = {
     emptyState?: SiteManagerDashboardEmptyStateResponseDto | null;
 };
 
+export type DroneOperatorDashboardStatsResponseDto = {
+    assignedMissionsCount: number;
+    plannedMissionsCount: number;
+    activeMissionsCount: number;
+    connectedDronesCount: number;
+    averageBatteryPercent?: number | null;
+    technicalAlertsCount: number;
+};
+
+export type DroneOperatorMissionResponseDto = {
+    id: string;
+    siteId: string;
+    siteName: string;
+    missionDate: string;
+    estimatedDurationMinutes?: number | null;
+    status: 'planned' | 'ready' | 'in_progress' | 'completed' | 'cancelled' | 'failed';
+    flightId?: string | null;
+    flightName?: string | null;
+    flightStatus?: string | null;
+    droneId?: string | null;
+    droneName?: string | null;
+    batteryPercent?: number | null;
+    connectionStatus: 'connected' | 'standby' | 'offline' | 'unknown';
+    detailsPath: string;
+};
+
+export type DroneOperatorDroneResponseDto = {
+    id: string;
+    name: string;
+    connectionStatus: 'connected' | 'standby' | 'offline' | 'unknown';
+    batteryPercent?: number | null;
+    currentMissionId?: string | null;
+    currentMissionStatus?: 'planned' | 'ready' | 'in_progress' | 'completed' | 'cancelled' | 'failed';
+    detailsPath: string;
+};
+
+export type DroneOperatorTechnicalAlertResponseDto = {
+    id: string;
+    type: string;
+    severity: 'warning' | 'critical';
+    message: string;
+    missionId: string;
+    siteId: string;
+    droneId?: string | null;
+    detectedAt: string;
+    detailsPath: string;
+};
+
+export type DroneOperatorNavigationShortcutResponseDto = {
+    label: string;
+    description: string;
+    path: string;
+    missionId?: string | null;
+    siteId?: string | null;
+    type: string;
+};
+
+export type DroneOperatorDataSourceResponseDto = {
+    key: string;
+    label: string;
+    status: string;
+    message: string;
+};
+
+export type DroneOperatorDashboardEmptyStateResponseDto = {
+    title: string;
+    message: string;
+};
+
+export type DroneOperatorDashboardResponseDto = {
+    organizationId: string;
+    siteId?: string | null;
+    generatedAt: string;
+    refreshMode: string;
+    refreshIntervalSeconds: number;
+    realTimeAvailable: boolean;
+    stats: DroneOperatorDashboardStatsResponseDto;
+    missions: Array<DroneOperatorMissionResponseDto>;
+    drones: Array<DroneOperatorDroneResponseDto>;
+    technicalAlerts: Array<DroneOperatorTechnicalAlertResponseDto>;
+    navigationShortcuts: Array<DroneOperatorNavigationShortcutResponseDto>;
+    dataSources: Array<DroneOperatorDataSourceResponseDto>;
+    emptyState?: DroneOperatorDashboardEmptyStateResponseDto | null;
+};
+
 export type OrganizationResponseDto = {
     id: string;
     name: string;
@@ -447,6 +532,48 @@ export type DashboardControllerGetSiteManagerDashboardResponses = {
 
 export type DashboardControllerGetSiteManagerDashboardResponse = DashboardControllerGetSiteManagerDashboardResponses[keyof DashboardControllerGetSiteManagerDashboardResponses];
 
+export type DashboardControllerGetDroneOperatorDashboardData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Filtre optionnel sur un chantier accessible au droniste.
+         */
+        siteId?: string;
+    };
+    url: '/api/dashboard/drone-operator';
+};
+
+export type DashboardControllerGetDroneOperatorDashboardErrors = {
+    /**
+     * Filtre dashboard droniste invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Droniste ou Administrateur et accès chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DashboardControllerGetDroneOperatorDashboardError = DashboardControllerGetDroneOperatorDashboardErrors[keyof DashboardControllerGetDroneOperatorDashboardErrors];
+
+export type DashboardControllerGetDroneOperatorDashboardResponses = {
+    /**
+     * Agrégation du dashboard droniste.
+     */
+    200: DroneOperatorDashboardResponseDto;
+};
+
+export type DashboardControllerGetDroneOperatorDashboardResponse = DashboardControllerGetDroneOperatorDashboardResponses[keyof DashboardControllerGetDroneOperatorDashboardResponses];
+
 export type OrganizationsControllerGetOrganizationData = {
     body?: never;
     path: {
@@ -612,8 +739,8 @@ export type OrganizationInvitationsControllerAcceptInvitationResponse = Organiza
 export type OrganizationUserRolesControllerGetUserRolesData = {
     body?: never;
     path: {
-        userId: string;
         organizationId: string;
+        userId: string;
     };
     query?: never;
     url: '/api/organizations/{organizationId}/users/{userId}/roles';
@@ -645,8 +772,8 @@ export type OrganizationUserRolesControllerGetUserRolesResponse = OrganizationUs
 export type OrganizationUserRolesControllerAddUserRoleData = {
     body: AddOrganizationUserRoleRequestDto;
     path: {
-        userId: string;
         organizationId: string;
+        userId: string;
     };
     query?: never;
     url: '/api/organizations/{organizationId}/users/{userId}/roles';
@@ -682,8 +809,8 @@ export type OrganizationUserRolesControllerAddUserRoleResponse = OrganizationUse
 export type OrganizationUserRolesControllerUpdateUserRolesData = {
     body: UpdateOrganizationUserRolesRequestDto;
     path: {
-        userId: string;
         organizationId: string;
+        userId: string;
     };
     query?: never;
     url: '/api/organizations/{organizationId}/users/{userId}/roles';
@@ -719,9 +846,9 @@ export type OrganizationUserRolesControllerUpdateUserRolesResponse = Organizatio
 export type OrganizationUserRolesControllerRemoveUserRoleData = {
     body?: never;
     path: {
-        roleCode: string;
-        userId: string;
         organizationId: string;
+        userId: string;
+        roleCode: string;
     };
     query?: never;
     url: '/api/organizations/{organizationId}/users/{userId}/roles/{roleCode}';
@@ -831,8 +958,8 @@ export type DocumentsControllerUploadDocumentResponse = DocumentsControllerUploa
 export type DocumentsControllerDownloadDocumentData = {
     body?: never;
     path: {
-        documentId: string;
         siteId: string;
+        documentId: string;
     };
     query?: never;
     url: '/api/sites/{siteId}/documents/{documentId}/download';
@@ -913,8 +1040,8 @@ export type PhasesControllerCreatePhaseResponse = PhasesControllerCreatePhaseRes
 export type PhasesControllerUpdatePhaseData = {
     body: UpdatePhaseRequestDto;
     path: {
-        phaseId: string;
         siteId: string;
+        phaseId: string;
     };
     query?: never;
     url: '/api/sites/{siteId}/phases/{phaseId}';
@@ -953,8 +1080,8 @@ export type PhasesControllerUpdatePhaseResponse = PhasesControllerUpdatePhaseRes
 export type ResourceAssignmentsControllerListPhaseWorkerAssignmentsData = {
     body?: never;
     path: {
-        phaseId: string;
         siteId: string;
+        phaseId: string;
     };
     query?: never;
     url: '/api/sites/{siteId}/phases/{phaseId}/worker-assignments';
@@ -989,8 +1116,8 @@ export type ResourceAssignmentsControllerListPhaseWorkerAssignmentsResponse = Re
 export type ResourceAssignmentsControllerAssignWorkersToPhaseData = {
     body: AssignPhaseWorkersRequestDto;
     path: {
-        phaseId: string;
         siteId: string;
+        phaseId: string;
     };
     query?: never;
     url: '/api/sites/{siteId}/phases/{phaseId}/worker-assignments';
