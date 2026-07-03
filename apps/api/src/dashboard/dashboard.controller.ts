@@ -16,6 +16,11 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard.js";
 import { ApiErrorResponseDto } from "../shared/http/api-error-response.dto.js";
 import { SiteManagerDashboardQueryDto, SiteManagerDashboardResponseDto } from "./dashboard.dto.js";
 import { DashboardService } from "./dashboard.service.js";
+import {
+  DroneOperatorDashboardQueryDto,
+  DroneOperatorDashboardResponseDto,
+} from "./drone-operator-dashboard.dto.js";
+import { DroneOperatorDashboardService } from "./drone-operator-dashboard.service.js";
 
 @ApiBearerAuth()
 @ApiTags("Dashboard")
@@ -24,6 +29,8 @@ import { DashboardService } from "./dashboard.service.js";
 export class DashboardController {
   public constructor(
     @Inject(DashboardService) private readonly dashboardService: DashboardService,
+    @Inject(DroneOperatorDashboardService)
+    private readonly droneOperatorDashboardService: DroneOperatorDashboardService,
   ) {}
 
   @Get("site-manager")
@@ -56,5 +63,37 @@ export class DashboardController {
     @Req() req: AuthenticatedRequest,
   ): Promise<SiteManagerDashboardResponseDto> {
     return this.dashboardService.getSiteManagerDashboard(query, req.auth);
+  }
+
+  @Get("drone-operator")
+  @ApiOkResponse({
+    description: "Agrégation du dashboard droniste.",
+    type: DroneOperatorDashboardResponseDto,
+  })
+  @ApiQuery({
+    description: "Filtre optionnel sur un chantier accessible au droniste.",
+    name: "siteId",
+    required: false,
+    type: String,
+  })
+  @ApiBadRequestResponse({
+    description: "Filtre dashboard droniste invalide.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Token JWT manquant ou invalide.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiForbiddenResponse({
+    description: "Rôle Droniste ou Administrateur et accès chantier requis.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiNotFoundResponse({ description: "Chantier introuvable.", type: ApiErrorResponseDto })
+  public getDroneOperatorDashboard(
+    @Query(createHttpValidationPipe(DroneOperatorDashboardQueryDto))
+    query: DroneOperatorDashboardQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<DroneOperatorDashboardResponseDto> {
+    return this.droneOperatorDashboardService.getDroneOperatorDashboard(query, req.auth);
   }
 }
