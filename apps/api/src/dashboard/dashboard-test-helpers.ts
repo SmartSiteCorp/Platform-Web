@@ -5,8 +5,10 @@ import request from "supertest";
 
 import type { RegisterResponseDto } from "../auth/auth.dto.js";
 import type { DatabaseService } from "../database/database.service.js";
+import type { JsonObject } from "../database/database.types.js";
 import type { SiteResponseDto } from "../sites/sites.dto.js";
 import { setUserRoles } from "../sites/sites-test-helpers.js";
+import { siteManagerDashboardViewedAuditAction } from "./dashboard.types.js";
 import type { SiteManagerDashboardResponseDto } from "./dashboard.dto.js";
 
 interface CreateSiteOptions {
@@ -36,6 +38,13 @@ interface CreateAiAlertOptions {
   readonly resolved?: boolean;
   readonly severity?: string;
   readonly type?: string;
+}
+
+export interface DashboardAuditLog {
+  readonly action: string;
+  readonly actor_user_id: string | null;
+  readonly metadata: JsonObject;
+  readonly organization_id: string;
 }
 
 export async function createDashboardTestAccount(
@@ -249,6 +258,25 @@ export async function createDashboardAiAlert(
 
 export function parseDashboardResponse(response: Response): SiteManagerDashboardResponseDto {
   return JSON.parse(response.text) as SiteManagerDashboardResponseDto;
+}
+
+export async function findLatestDashboardAuditLog(
+  databaseService: DatabaseService,
+  organizationId: string,
+): Promise<DashboardAuditLog | null> {
+  const result = await databaseService.query<DashboardAuditLog>(
+    `
+      SELECT organization_id, actor_user_id, action, metadata
+      FROM organization_audit_logs
+      WHERE organization_id = $1
+        AND action = $2
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [organizationId, siteManagerDashboardViewedAuditAction],
+  );
+
+  return result.rows[0] ?? null;
 }
 
 function parseRegisterResponse(response: Response): RegisterResponseDto {

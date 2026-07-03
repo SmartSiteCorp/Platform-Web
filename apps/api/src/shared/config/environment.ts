@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { config as loadDotenvFile } from "dotenv";
 
 const defaultApiPort = 4000;
+const defaultDashboardRefreshIntervalSeconds = 30;
 const defaultInvitationExpiresInSeconds = 604800;
 const defaultJwtAccessExpiresInSeconds = 25200;
 const defaultRegisterRateLimitLimit = 5;
@@ -121,6 +122,13 @@ export function getJwtAccessExpiresInSeconds(): number {
   return getOptionalPositiveIntegerEnv(
     "JWT_ACCESS_EXPIRES_IN_SECONDS",
     defaultJwtAccessExpiresInSeconds,
+  );
+}
+
+export function getDashboardRefreshIntervalSeconds(): number {
+  return getOptionalPositiveIntegerEnv(
+    "DASHBOARD_REFRESH_INTERVAL_SECONDS",
+    defaultDashboardRefreshIntervalSeconds,
   );
 }
 

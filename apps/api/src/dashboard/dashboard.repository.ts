@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { QueryResultRow } from "pg";
 
 import { DatabaseService } from "../database/database.service.js";
+import type { JsonObject } from "../database/database.types.js";
 import {
   siteManagerAlertsQuery,
   siteManagerDeadlinesQuery,
@@ -14,9 +15,13 @@ import type {
   DashboardDeadlineSummary,
   DashboardRepositoryPort,
   DashboardSiteSummary,
+  SiteManagerDashboardAuditInput,
   SiteManagerDashboardQuery,
 } from "./dashboard.types.js";
-import { siteManagerDashboardRoleCodes } from "./dashboard.types.js";
+import {
+  siteManagerDashboardRoleCodes,
+  siteManagerDashboardViewedAuditAction,
+} from "./dashboard.types.js";
 
 interface SiteSummaryRow extends QueryResultRow {
   readonly id: string;
@@ -92,6 +97,41 @@ export class DashboardRepository implements DashboardRepositoryPort {
     );
 
     return result.rows.map((row) => this.mapDeadlineSummary(row));
+  }
+
+  public async recordSiteManagerDashboardAccess(
+    input: SiteManagerDashboardAuditInput,
+  ): Promise<void> {
+    const metadata = this.createDashboardAuditMetadata(input);
+
+    await this.databaseService.query(
+      `
+        INSERT INTO organization_audit_logs (organization_id, actor_user_id, action, metadata)
+        VALUES ($1, $2, $3, $4::jsonb)
+      `,
+      [
+        input.organizationId,
+        input.actorUserId,
+        siteManagerDashboardViewedAuditAction,
+        JSON.stringify(metadata),
+      ],
+    );
+  }
+
+  private createDashboardAuditMetadata(input: SiteManagerDashboardAuditInput): JsonObject {
+    const commonMetadata: JsonObject = {
+      dashboard: "site_manager",
+      siteFilterApplied: input.siteId !== null,
+      upcomingDeadlineCount: input.upcomingDeadlineCount,
+      visibleAlertCount: input.visibleAlertCount,
+      visibleSiteCount: input.visibleSiteCount,
+    };
+
+    if (!input.siteId) {
+      return commonMetadata;
+    }
+
+    return { ...commonMetadata, siteId: input.siteId };
   }
 
   public async siteExistsInOrganization(siteId: string, organizationId: string): Promise<boolean> {

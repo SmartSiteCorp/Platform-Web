@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   getApiPort,
   getAppOrigin,
+  getDashboardRefreshIntervalSeconds,
   getEmailProviderConfiguration,
   getEnvironmentFilePaths,
   getJwtAccessExpiresInSeconds,
@@ -59,6 +60,7 @@ describe("environment", () => {
     delete process.env.APP_ORIGIN;
     delete process.env.AUTH_REGISTER_RATE_LIMIT_LIMIT;
     delete process.env.AUTH_REGISTER_RATE_LIMIT_TTL_SECONDS;
+    delete process.env.DASHBOARD_REFRESH_INTERVAL_SECONDS;
     delete process.env.EMAIL_PROVIDER;
     delete process.env.EMAIL_FROM_ADDRESS;
     delete process.env.ORGANIZATION_INVITATION_EXPIRES_IN_SECONDS;
@@ -66,6 +68,7 @@ describe("environment", () => {
 
     expect(getApiPort()).toBe(4000);
     expect(getAppOrigin()).toBe("http://localhost:3000");
+    expect(getDashboardRefreshIntervalSeconds()).toBe(30);
     expect(getEmailProviderConfiguration()).toStrictEqual({
       fromAddress: "no-reply@smartsite.local",
       httpBearerToken: null,
@@ -236,5 +239,13 @@ describe("email environment", () => {
     process.env.ORGANIZATION_INVITATION_EXPIRES_IN_SECONDS = "3600";
 
     expect(getOrganizationInvitationExpiresInSeconds()).toBe(3600);
+  });
+});
+
+describe("dashboard environment", () => {
+  it("uses the configured dashboard refresh interval", () => {
+    process.env.DASHBOARD_REFRESH_INTERVAL_SECONDS = "45";
+
+    expect(getDashboardRefreshIntervalSeconds()).toBe(45);
   });
 });

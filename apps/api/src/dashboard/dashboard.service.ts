@@ -2,6 +2,7 @@ import { ForbiddenException, Inject, Injectable, NotFoundException } from "@nest
 
 import type { AccessTokenPayload } from "../auth/auth.types.js";
 import { OrganizationsService } from "../organizations/organizations.service.js";
+import { getDashboardRefreshIntervalSeconds } from "../shared/config/environment.js";
 import type { SiteManagerDashboardQueryDto } from "./dashboard.dto.js";
 import { DashboardRepository } from "./dashboard.repository.js";
 import {
@@ -15,7 +16,6 @@ import {
   type SiteManagerDashboardStats,
 } from "./dashboard.types.js";
 
-const dashboardRefreshIntervalSeconds = 30;
 const dashboardShortcutLimit = 4;
 
 @Injectable()
@@ -47,6 +47,16 @@ export class DashboardService {
       this.dashboardRepository.listSiteManagerAlerts(query),
       this.dashboardRepository.listSiteManagerDeadlines(query),
     ]);
+    const refreshIntervalSeconds = getDashboardRefreshIntervalSeconds();
+
+    await this.dashboardRepository.recordSiteManagerDashboardAccess({
+      actorUserId: user.sub,
+      organizationId: user.organizationId,
+      siteId,
+      upcomingDeadlineCount: upcomingDeadlines.length,
+      visibleAlertCount: alerts.length,
+      visibleSiteCount: sites.length,
+    });
 
     return {
       alerts,
@@ -56,7 +66,7 @@ export class DashboardService {
       navigationShortcuts: this.createNavigationShortcuts(sites),
       organizationId: user.organizationId,
       realTimeAvailable: false,
-      refreshIntervalSeconds: dashboardRefreshIntervalSeconds,
+      refreshIntervalSeconds,
       refreshMode: "http_polling",
       siteId,
       sites,

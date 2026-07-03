@@ -1,4 +1,5 @@
 export const siteManagerDashboardRoleCodes = ["chef_chantier", "administrateur"] as const;
+export const siteManagerDashboardViewedAuditAction = "dashboard.site_manager_viewed";
 
 export const dashboardAlertSeverities = ["low", "medium", "high", "critical"] as const;
 export type DashboardAlertSeverity = (typeof dashboardAlertSeverities)[number];
@@ -13,6 +14,15 @@ export interface SiteManagerDashboardQuery {
   readonly organizationId: string;
   readonly siteId: string | null;
   readonly userId: string;
+}
+
+export interface SiteManagerDashboardAuditInput {
+  readonly actorUserId: string;
+  readonly organizationId: string;
+  readonly siteId: string | null;
+  readonly upcomingDeadlineCount: number;
+  readonly visibleAlertCount: number;
+  readonly visibleSiteCount: number;
 }
 
 export interface DashboardSiteSummary {
@@ -113,6 +123,7 @@ export interface DashboardRepositoryPort {
   listSiteManagerDeadlines(
     query: SiteManagerDashboardQuery,
   ): Promise<readonly DashboardDeadlineSummary[]>;
+  recordSiteManagerDashboardAccess(input: SiteManagerDashboardAuditInput): Promise<void>;
   siteExistsInOrganization(siteId: string, organizationId: string): Promise<boolean>;
   userCanAccessSiteManagerDashboard(
     siteId: string,
