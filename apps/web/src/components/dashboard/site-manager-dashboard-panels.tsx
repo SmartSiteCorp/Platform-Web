@@ -1,8 +1,8 @@
 "use client";
 
 import { AlertTriangle, ArrowRight } from "lucide-react";
-import type { Route } from "next";
 import Link from "next/link";
+import type { UrlObject } from "url";
 
 import type {
   SiteManagerDashboardAlertResponseDto,
@@ -242,6 +242,6 @@ function EmptyPanelMessage({ message }: { readonly message: string }) {
   );
 }
 
-function toRoute(path: string): Route {
-  return path as Route;
+function toRoute(path: string): UrlObject {
+  return { pathname: path };
 }
