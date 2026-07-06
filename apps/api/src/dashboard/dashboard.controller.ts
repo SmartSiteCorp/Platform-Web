@@ -14,6 +14,11 @@ import { createHttpValidationPipe } from "../app-http.js";
 import type { AuthenticatedRequest } from "../auth/authenticated-request.js";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard.js";
 import { ApiErrorResponseDto } from "../shared/http/api-error-response.dto.js";
+import {
+  ArchitectDashboardQueryDto,
+  ArchitectDashboardResponseDto,
+} from "./architect-dashboard.dto.js";
+import { ArchitectDashboardService } from "./architect-dashboard.service.js";
 import { SiteManagerDashboardQueryDto, SiteManagerDashboardResponseDto } from "./dashboard.dto.js";
 import { DashboardService } from "./dashboard.service.js";
 import {
@@ -28,10 +33,44 @@ import { DroneOperatorDashboardService } from "./drone-operator-dashboard.servic
 @UseGuards(JwtAuthGuard)
 export class DashboardController {
   public constructor(
+    @Inject(ArchitectDashboardService)
+    private readonly architectDashboardService: ArchitectDashboardService,
     @Inject(DashboardService) private readonly dashboardService: DashboardService,
     @Inject(DroneOperatorDashboardService)
     private readonly droneOperatorDashboardService: DroneOperatorDashboardService,
   ) {}
+
+  @Get("architect")
+  @ApiOkResponse({
+    description: "Agrégation du dashboard architecte.",
+    type: ArchitectDashboardResponseDto,
+  })
+  @ApiQuery({
+    description: "Filtre optionnel sur un chantier accessible à l'architecte.",
+    name: "siteId",
+    required: false,
+    type: String,
+  })
+  @ApiBadRequestResponse({
+    description: "Filtre dashboard architecte invalide.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: "Token JWT manquant ou invalide.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiForbiddenResponse({
+    description: "Rôle Architecte ou Administrateur et accès chantier requis.",
+    type: ApiErrorResponseDto,
+  })
+  @ApiNotFoundResponse({ description: "Chantier introuvable.", type: ApiErrorResponseDto })
+  public getArchitectDashboard(
+    @Query(createHttpValidationPipe(ArchitectDashboardQueryDto))
+    query: ArchitectDashboardQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<ArchitectDashboardResponseDto> {
+    return this.architectDashboardService.getArchitectDashboard(query, req.auth);
+  }
 
   @Get("site-manager")
   @ApiOkResponse({
