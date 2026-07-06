@@ -3,10 +3,12 @@ import { createTestAccessToken } from "@/test/create-test-access-token";
 
 interface AuthSessionFixtureOptions {
   readonly expiresAtSeconds?: number;
+  readonly roles?: readonly string[];
 }
 
 export function createAuthSessionFixture({
   expiresAtSeconds = Math.floor(Date.now() / 1000) + 3600,
+  roles = ["administrateur"],
 }: AuthSessionFixtureOptions = {}): RegisterResponseDto {
   return {
     accessToken: createTestAccessToken(expiresAtSeconds),
@@ -25,7 +27,7 @@ export function createAuthSessionFixture({
       lastName: "Rauta",
       organizationId: "organization-id",
       phone: null,
-      roles: ["administrateur"],
+      roles: [...roles],
       status: "active",
     },
   };

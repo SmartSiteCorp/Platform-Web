@@ -57,6 +57,23 @@ describe("LoginPage", () => {
     });
   });
 
+  it("redirige un droniste seul vers le dashboard droniste apres login", async () => {
+    const loggedAccount = createLoggedAccount({ roles: ["droniste"] });
+
+    loginMock.loginAccount.mockResolvedValue({
+      account: loggedAccount,
+      ok: true,
+    });
+
+    render(<LoginPage />);
+    fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: "Se connecter" }));
+
+    await waitFor(() => {
+      expect(routerMock.push).toHaveBeenCalledWith("/dashboard/drone-operator");
+    });
+  });
+
   it("keeps the user on login when credentials are rejected", async () => {
     const rejectedMessage = "Email ou mot de passe incorrect.";
 
@@ -91,7 +108,11 @@ describe("LoginPage", () => {
   });
 });
 
-function createLoggedAccount(): LoginResponseDto {
+function createLoggedAccount({
+  roles = ["administrateur"],
+}: {
+  readonly roles?: readonly string[];
+} = {}): LoginResponseDto {
   return {
     accessToken: createTestAccessToken(Math.floor(Date.now() / 1000) + 3600),
     organization: {
@@ -109,7 +130,7 @@ function createLoggedAccount(): LoginResponseDto {
       lastName: "Rauta",
       organizationId: "organization-id",
       phone: null,
-      roles: ["administrateur"],
+      roles: [...roles],
       status: "active",
     },
   };

@@ -7,9 +7,11 @@ export function formatStatus(status: string): string {
   const labels: Record<string, string> = {
     cancelled: "Annulé",
     completed: "Terminé",
+    failed: "Échec",
     in_progress: "En cours",
     on_hold: "Suspendu",
     planned: "Planifié",
+    ready: "Prêt",
   };
 
   return labels[status] ?? status;

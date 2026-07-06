@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { SmartSiteLogo } from "@/components/brand/smartsite-logo";
+import type { DashboardPath } from "@/lib/dashboard-routing";
 import { cn } from "@/lib/utils";
 import { LogoutButton } from "./logout-button";
 
@@ -10,6 +11,7 @@ type AppHeaderItem = "dashboard" | "organization-settings";
 
 interface AppHeaderProps {
   readonly activeItem: AppHeaderItem;
+  readonly dashboardHref?: DashboardPath;
   readonly showSettingsLink?: boolean;
 }
 
@@ -28,13 +30,21 @@ const headerNavItems: readonly HeaderNavItem[] = [
   },
 ];
 
-export function AppHeader({ activeItem, showSettingsLink = false }: AppHeaderProps) {
+export function AppHeader({
+  activeItem,
+  dashboardHref = "/dashboard",
+  showSettingsLink = false,
+}: AppHeaderProps) {
   return (
     <header className="border-b border-border bg-accent text-accent-foreground">
       <div className="container flex min-h-20 flex-col justify-center gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
         <HeaderBrand />
         <div className="flex items-center justify-between gap-3 sm:justify-end">
-          <HeaderNav activeItem={activeItem} showSettingsLink={showSettingsLink} />
+          <HeaderNav
+            activeItem={activeItem}
+            dashboardHref={dashboardHref}
+            showSettingsLink={showSettingsLink}
+          />
           <button
             aria-label="Notifications"
             className="rounded-md border border-white/20 p-3 text-accent-foreground transition-colors hover:bg-white/10"
@@ -65,9 +75,11 @@ function HeaderBrand() {
 
 function HeaderNav({
   activeItem,
+  dashboardHref,
   showSettingsLink,
 }: {
   readonly activeItem: AppHeaderItem;
+  readonly dashboardHref: DashboardPath;
   readonly showSettingsLink: boolean;
 }) {
   const visibleItems = headerNavItems.filter(
@@ -77,7 +89,12 @@ function HeaderNav({
   return (
     <nav aria-label="Navigation principale" className="flex items-center gap-2">
       {visibleItems.map((item) => (
-        <HeaderNavLink activeItem={activeItem} item={item} key={item.id} />
+        <HeaderNavLink
+          activeItem={activeItem}
+          dashboardHref={dashboardHref}
+          item={item}
+          key={item.id}
+        />
       ))}
     </nav>
   );
@@ -85,9 +102,11 @@ function HeaderNav({
 
 function HeaderNavLink({
   activeItem,
+  dashboardHref,
   item,
 }: {
   readonly activeItem: AppHeaderItem;
+  readonly dashboardHref: DashboardPath;
   readonly item: HeaderNavItem;
 }) {
   const Icon = item.icon;
@@ -105,7 +124,7 @@ function HeaderNavLink({
 
   if (item.id === "dashboard") {
     return (
-      <Link className={linkClasses} href="/dashboard">
+      <Link className={linkClasses} href={dashboardHref}>
         {linkContent}
       </Link>
     );
