@@ -58,6 +58,110 @@ export type LoginResponseDto = {
     accessToken: string;
 };
 
+export type ArchitectDashboardStatsResponseDto = {
+    accessibleProjectsCount: number;
+    ifcFilesCount: number;
+    recentAnnotationsCount: number;
+    activeAiAnomaliesCount: number;
+    validatedBimProjectsCount: number;
+    bimReviewRequiredProjectsCount: number;
+};
+
+export type ArchitectProjectResponseDto = {
+    id: string;
+    name: string;
+    address?: string | null;
+    status: string;
+    ifcModelCount: number;
+    latestIfcModelId?: string | null;
+    latestIfcVersion?: string | null;
+    latestIfcFileId?: string | null;
+    latestIfcFileName?: string | null;
+    latestIfcCreatedAt?: string | null;
+    ifcStatus: 'available' | 'processing' | 'invalid' | 'missing';
+    recentAnnotationsCount: number;
+    activeAiAnomaliesCount: number;
+    criticalAiAnomaliesCount: number;
+    bimValidationStatus: 'pending' | 'validated' | 'review_required' | 'blocked';
+    detailsPath: string;
+    ifcModelPath?: string | null;
+};
+
+export type ArchitectIfcModelResponseDto = {
+    id: string;
+    siteId: string;
+    siteName: string;
+    fileId: string;
+    fileName: string;
+    version: string;
+    notes?: string | null;
+    status: 'available' | 'processing' | 'invalid' | 'missing';
+    createdAt: string;
+    detailsPath: string;
+};
+
+export type ArchitectAnnotationResponseDto = {
+    id: string;
+    siteId: string;
+    siteName: string;
+    bimModelId?: string | null;
+    title: string;
+    comment?: string | null;
+    createdAt: string;
+    detailsPath: string;
+};
+
+export type ArchitectAiAnomalyResponseDto = {
+    id: string;
+    siteId: string;
+    siteName: string;
+    type: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    description: string;
+    recommendation?: string | null;
+    status: string;
+    detectedAt: string;
+    detailsPath: string;
+};
+
+export type ArchitectNavigationShortcutResponseDto = {
+    label: string;
+    description: string;
+    path: string;
+    modelId?: string | null;
+    siteId?: string | null;
+    type: string;
+};
+
+export type ArchitectDataSourceResponseDto = {
+    key: string;
+    label: string;
+    status: 'available' | 'empty' | 'unavailable';
+    message: string;
+};
+
+export type ArchitectDashboardEmptyStateResponseDto = {
+    title: string;
+    message: string;
+};
+
+export type ArchitectDashboardResponseDto = {
+    organizationId: string;
+    siteId?: string | null;
+    generatedAt: string;
+    refreshMode: string;
+    refreshIntervalSeconds: number;
+    realTimeAvailable: boolean;
+    stats: ArchitectDashboardStatsResponseDto;
+    projects: Array<ArchitectProjectResponseDto>;
+    ifcModels: Array<ArchitectIfcModelResponseDto>;
+    annotations: Array<ArchitectAnnotationResponseDto>;
+    aiAnomalies: Array<ArchitectAiAnomalyResponseDto>;
+    navigationShortcuts: Array<ArchitectNavigationShortcutResponseDto>;
+    dataSources: Array<ArchitectDataSourceResponseDto>;
+    emptyState?: ArchitectDashboardEmptyStateResponseDto | null;
+};
+
 export type SiteManagerDashboardStatsResponseDto = {
     accessibleSitesCount: number;
     activeSitesCount: number;
@@ -489,6 +593,48 @@ export type AuthControllerLoginResponses = {
 };
 
 export type AuthControllerLoginResponse = AuthControllerLoginResponses[keyof AuthControllerLoginResponses];
+
+export type DashboardControllerGetArchitectDashboardData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Filtre optionnel sur un chantier accessible à l'architecte.
+         */
+        siteId?: string;
+    };
+    url: '/api/dashboard/architect';
+};
+
+export type DashboardControllerGetArchitectDashboardErrors = {
+    /**
+     * Filtre dashboard architecte invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Architecte ou Administrateur et accès chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DashboardControllerGetArchitectDashboardError = DashboardControllerGetArchitectDashboardErrors[keyof DashboardControllerGetArchitectDashboardErrors];
+
+export type DashboardControllerGetArchitectDashboardResponses = {
+    /**
+     * Agrégation du dashboard architecte.
+     */
+    200: ArchitectDashboardResponseDto;
+};
+
+export type DashboardControllerGetArchitectDashboardResponse = DashboardControllerGetArchitectDashboardResponses[keyof DashboardControllerGetArchitectDashboardResponses];
 
 export type DashboardControllerGetSiteManagerDashboardData = {
     body?: never;
