@@ -1,4 +1,5 @@
 export const droneOperatorDashboardRoleCodes = ["droniste", "administrateur"] as const;
+export const droneOperatorDashboardViewedAuditAction = "dashboard.drone_operator_viewed";
 
 export const droneMissionStatuses = [
   "planned",
@@ -20,6 +21,15 @@ export interface DroneOperatorDashboardQuery {
   readonly organizationId: string;
   readonly siteId: string | null;
   readonly userId: string;
+}
+
+export interface DroneOperatorDashboardAuditInput {
+  readonly actorUserId: string;
+  readonly organizationId: string;
+  readonly siteId: string | null;
+  readonly visibleDroneCount: number;
+  readonly visibleMissionCount: number;
+  readonly visibleTechnicalAlertCount: number;
 }
 
 export interface DroneOperatorMissionSummary {
@@ -111,6 +121,7 @@ export interface DroneOperatorDashboardRepositoryPort {
   listDroneOperatorMissions(
     query: DroneOperatorDashboardQuery,
   ): Promise<readonly DroneOperatorMissionSummary[]>;
+  recordDroneOperatorDashboardAccess(input: DroneOperatorDashboardAuditInput): Promise<void>;
   siteExistsInOrganization(siteId: string, organizationId: string): Promise<boolean>;
   userCanAccessDroneOperatorDashboard(
     siteId: string,

@@ -6,8 +6,10 @@ import type { JsonObject, JsonValue } from "../database/database.types.js";
 import { droneOperatorMissionsQuery } from "./drone-operator-dashboard.queries.js";
 import {
   droneConnectionStatuses,
+  droneOperatorDashboardViewedAuditAction,
   droneOperatorDashboardRoleCodes,
   type DroneConnectionStatus,
+  type DroneOperatorDashboardAuditInput,
   type DroneMissionStatus,
   type DroneOperatorDashboardQuery,
   type DroneOperatorDashboardRepositoryPort,
@@ -53,6 +55,41 @@ export class DroneOperatorDashboardRepository implements DroneOperatorDashboardR
     );
 
     return result.rows.length > 0;
+  }
+
+  public async recordDroneOperatorDashboardAccess(
+    input: DroneOperatorDashboardAuditInput,
+  ): Promise<void> {
+    const metadata = this.createDashboardAuditMetadata(input);
+
+    await this.databaseService.query(
+      `
+        INSERT INTO organization_audit_logs (organization_id, actor_user_id, action, metadata)
+        VALUES ($1, $2, $3, $4::jsonb)
+      `,
+      [
+        input.organizationId,
+        input.actorUserId,
+        droneOperatorDashboardViewedAuditAction,
+        JSON.stringify(metadata),
+      ],
+    );
+  }
+
+  private createDashboardAuditMetadata(input: DroneOperatorDashboardAuditInput): JsonObject {
+    const commonMetadata: JsonObject = {
+      dashboard: "drone_operator",
+      siteFilterApplied: input.siteId !== null,
+      visibleDroneCount: input.visibleDroneCount,
+      visibleMissionCount: input.visibleMissionCount,
+      visibleTechnicalAlertCount: input.visibleTechnicalAlertCount,
+    };
+
+    if (!input.siteId) {
+      return commonMetadata;
+    }
+
+    return { ...commonMetadata, siteId: input.siteId };
   }
 
   public async userCanAccessDroneOperatorDashboard(
