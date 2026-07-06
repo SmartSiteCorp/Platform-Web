@@ -7,6 +7,7 @@ import { AuthPageShell, type AuthIntroStep } from "@/components/auth/auth-page-s
 import { RegisterForm } from "@/components/auth/register-form";
 import type { RegisterResponseDto } from "@/generated/api";
 import { saveAuthSession } from "@/lib/auth-session";
+import { getDashboardPathForAccount } from "@/lib/dashboard-routing";
 import { registerAccount } from "@/lib/register-account";
 
 const registerIntroSteps: readonly AuthIntroStep[] = [
@@ -20,7 +21,7 @@ export function RegisterPage() {
 
   const completeRegistration = (account: RegisterResponseDto): void => {
     saveAuthSession(account);
-    router.push("/dashboard");
+    router.push(getDashboardPathForAccount(account));
   };
 
   return (

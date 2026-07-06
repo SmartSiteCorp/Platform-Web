@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { DashboardEntryShell } from "@/components/dashboard/dashboard-entry-shell";
 
 export const metadata: Metadata = {
   description: "Tableau de bord entreprise SmartSite.",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardPage() {
-  return <DashboardShell />;
+  return <DashboardEntryShell />;
 }

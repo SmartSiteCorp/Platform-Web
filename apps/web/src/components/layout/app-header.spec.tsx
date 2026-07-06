@@ -46,4 +46,13 @@ describe("AppHeader", () => {
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Paramètres" })).not.toBeInTheDocument();
   });
+
+  it("utilise la route dashboard specifique quand elle est fournie", () => {
+    render(<AppHeader activeItem="dashboard" dashboardHref="/dashboard/drone-operator" />);
+
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
+      "href",
+      "/dashboard/drone-operator",
+    );
+  });
 });

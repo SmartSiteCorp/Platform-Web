@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AcceptOrganizationInvitationResponseDto } from "@/generated/api";
 import { saveAuthSession } from "@/lib/auth-session";
+import { getDashboardPathForAccount } from "@/lib/dashboard-routing";
 import { acceptOrganizationInvitation } from "@/lib/organization-invitations";
 
 const invitationAcceptanceSteps: readonly AuthIntroStep[] = [
@@ -26,7 +27,7 @@ export function OrganizationInvitationAcceptancePage() {
 
   const completeInvitationAcceptance = (account: AcceptOrganizationInvitationResponseDto): void => {
     saveAuthSession(account);
-    router.push("/dashboard");
+    router.push(getDashboardPathForAccount(account));
   };
 
   return (
