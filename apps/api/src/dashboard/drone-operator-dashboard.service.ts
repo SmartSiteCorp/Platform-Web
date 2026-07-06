@@ -54,6 +54,16 @@ export class DroneOperatorDashboardService {
     });
     const drones = this.createDroneSummaries(missions);
     const technicalAlerts = this.createTechnicalAlerts(missions);
+    const refreshIntervalSeconds = getDashboardRefreshIntervalSeconds();
+
+    await this.dashboardRepository.recordDroneOperatorDashboardAccess({
+      actorUserId: user.sub,
+      organizationId: user.organizationId,
+      siteId,
+      visibleDroneCount: drones.length,
+      visibleMissionCount: missions.length,
+      visibleTechnicalAlertCount: technicalAlerts.length,
+    });
 
     return {
       dataSources: this.createDataSources(missions, drones),
@@ -64,7 +74,7 @@ export class DroneOperatorDashboardService {
       navigationShortcuts: this.createNavigationShortcuts(missions),
       organizationId: user.organizationId,
       realTimeAvailable: false,
-      refreshIntervalSeconds: getDashboardRefreshIntervalSeconds(),
+      refreshIntervalSeconds,
       refreshMode: "http_polling",
       siteId,
       stats: this.createStats(missions, drones, technicalAlerts.length),

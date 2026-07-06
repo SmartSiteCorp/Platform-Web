@@ -3,6 +3,14 @@ import type { Response } from "supertest";
 import type { DatabaseService } from "../database/database.service.js";
 import type { JsonObject } from "../database/database.types.js";
 import type { DroneOperatorDashboardResponseDto } from "./drone-operator-dashboard.dto.js";
+import { droneOperatorDashboardViewedAuditAction } from "./drone-operator-dashboard.types.js";
+
+export interface DroneDashboardAuditLog {
+  readonly action: string;
+  readonly actor_user_id: string | null;
+  readonly metadata: JsonObject;
+  readonly organization_id: string;
+}
 
 interface CreateDroneDeviceOptions {
   readonly name?: string;
@@ -129,4 +137,23 @@ export function parseDroneOperatorDashboardResponse(
   response: Response,
 ): DroneOperatorDashboardResponseDto {
   return JSON.parse(response.text) as DroneOperatorDashboardResponseDto;
+}
+
+export async function findLatestDroneDashboardAuditLog(
+  databaseService: DatabaseService,
+  organizationId: string,
+): Promise<DroneDashboardAuditLog | null> {
+  const result = await databaseService.query<DroneDashboardAuditLog>(
+    `
+      SELECT organization_id, actor_user_id, action, metadata
+      FROM organization_audit_logs
+      WHERE organization_id = $1
+        AND action = $2
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [organizationId, droneOperatorDashboardViewedAuditAction],
+  );
+
+  return result.rows[0] ?? null;
 }
