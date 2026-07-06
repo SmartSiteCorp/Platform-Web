@@ -7,7 +7,13 @@ import { useRouter } from "next/navigation";
 
 import { AppHeader } from "@/components/layout/app-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { defaultDashboardPath, getDashboardPathForAccount } from "@/lib/dashboard-routing";
+import {
+  architectDashboardPath,
+  defaultDashboardPath,
+  droneOperatorDashboardPath,
+  getDashboardPathForAccount,
+  type DashboardPath,
+} from "@/lib/dashboard-routing";
 import { useRequiredAuthSession } from "@/lib/use-auth-session";
 import { DashboardShell } from "./dashboard-shell";
 
@@ -31,10 +37,22 @@ export function DashboardEntryShell() {
   }
 
   if (dashboardPath !== defaultDashboardPath) {
-    return <DashboardEntryLoading message="Ouverture du dashboard droniste..." />;
+    return <DashboardEntryLoading message={getDashboardOpeningMessage(dashboardPath)} />;
   }
 
   return <DashboardShell />;
+}
+
+function getDashboardOpeningMessage(dashboardPath: DashboardPath): string {
+  if (dashboardPath === droneOperatorDashboardPath) {
+    return "Ouverture du dashboard droniste...";
+  }
+
+  if (dashboardPath === architectDashboardPath) {
+    return "Ouverture du dashboard architecte...";
+  }
+
+  return "Ouverture du dashboard...";
 }
 
 function DashboardEntryLoading({ message }: { readonly message: string }) {

@@ -1,7 +1,9 @@
 import {
+  dashboardControllerGetArchitectDashboard,
   dashboardControllerGetDroneOperatorDashboard,
   dashboardControllerGetSiteManagerDashboard,
   type ApiErrorResponseDto,
+  type ArchitectDashboardResponseDto,
   type DroneOperatorDashboardResponseDto,
   type SiteManagerDashboardResponseDto,
 } from "@/generated/api";
@@ -25,6 +27,10 @@ export type LoadSiteManagerDashboardResult =
 
 export type LoadDroneOperatorDashboardResult =
   | { readonly dashboard: DroneOperatorDashboardResponseDto; readonly ok: true }
+  | DashboardLoadErrorResult;
+
+export type LoadArchitectDashboardResult =
+  | { readonly dashboard: ArchitectDashboardResponseDto; readonly ok: true }
   | DashboardLoadErrorResult;
 
 export async function loadSiteManagerDashboard(
@@ -61,6 +67,26 @@ export async function loadDroneOperatorDashboard(
       default: "Le chargement du dashboard droniste a échoué.",
       forbidden: "Vous n'avez pas accès au dashboard droniste.",
       notFound: "Le chantier demandé est introuvable pour ce droniste.",
+    });
+  }
+
+  return { dashboard: response.data, ok: true };
+}
+
+export async function loadArchitectDashboard(
+  accessToken: string,
+  siteId: string | null,
+): Promise<LoadArchitectDashboardResult> {
+  const requestOptions = siteId
+    ? { auth: accessToken, baseUrl: getApiBaseUrl(), query: { siteId } }
+    : { auth: accessToken, baseUrl: getApiBaseUrl() };
+  const response = await dashboardControllerGetArchitectDashboard(requestOptions);
+
+  if (response.error) {
+    return buildDashboardErrorResult(response.error, response.response?.status, {
+      default: "Le chargement du dashboard architecte a échoué.",
+      forbidden: "Vous n'avez pas accès au dashboard architecte.",
+      notFound: "Le chantier demandé est introuvable pour cet architecte.",
     });
   }
 

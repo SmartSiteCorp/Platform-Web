@@ -58,4 +58,18 @@ describe("DashboardEntryShell", () => {
       expect(routerMock.replace).toHaveBeenCalledWith("/dashboard/drone-operator?siteId=site-id-1");
     });
   });
+
+  it("redirige un architecte seul vers son dashboard", async () => {
+    authSessionMock.session = createAuthSessionFixture({
+      roles: ["architecte"],
+    });
+    window.history.replaceState(null, "", "/dashboard?siteId=site-id-2");
+
+    render(<DashboardEntryShell />);
+
+    expect(screen.getByText("Ouverture du dashboard architecte...")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(routerMock.replace).toHaveBeenCalledWith("/dashboard/architect?siteId=site-id-2");
+    });
+  });
 });
