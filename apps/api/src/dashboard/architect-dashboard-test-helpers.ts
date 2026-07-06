@@ -3,6 +3,7 @@ import type { Response } from "supertest";
 import type { DatabaseService } from "../database/database.service.js";
 import type { JsonObject } from "../database/database.types.js";
 import type { ArchitectDashboardResponseDto } from "./architect-dashboard.dto.js";
+import { architectDashboardViewedAuditAction } from "./architect-dashboard.types.js";
 
 interface CreateArchitectIfcFileOptions {
   readonly metadata?: JsonObject;
@@ -18,6 +19,13 @@ interface CreateArchitectBimModelOptions {
 interface CreateArchitectAnnotationOptions {
   readonly comment?: string | null;
   readonly title?: string;
+}
+
+export interface ArchitectDashboardAuditLog {
+  readonly action: string;
+  readonly actor_user_id: string | null;
+  readonly metadata: JsonObject;
+  readonly organization_id: string;
 }
 
 export async function setArchitectSiteMemberRoles(
@@ -142,4 +150,23 @@ export async function createArchitectAnnotation(
 
 export function parseArchitectDashboardResponse(response: Response): ArchitectDashboardResponseDto {
   return JSON.parse(response.text) as ArchitectDashboardResponseDto;
+}
+
+export async function findLatestArchitectDashboardAuditLog(
+  databaseService: DatabaseService,
+  organizationId: string,
+): Promise<ArchitectDashboardAuditLog | null> {
+  const result = await databaseService.query<ArchitectDashboardAuditLog>(
+    `
+      SELECT organization_id, actor_user_id, action, metadata
+      FROM organization_audit_logs
+      WHERE organization_id = $1
+        AND action = $2
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [organizationId, architectDashboardViewedAuditAction],
+  );
+
+  return result.rows[0] ?? null;
 }
