@@ -13,6 +13,7 @@ import {
   resolveSitePageServices,
   type SitePageServiceOverrides,
 } from "./site-page-services";
+import { SiteIntervenantsSection } from "./site-intervenants-section";
 import { SiteDocumentsSection } from "./site-documents-section";
 
 interface SitePageProps extends SitePageServiceOverrides {
@@ -35,6 +36,15 @@ export function SitePage({ siteId, ...serviceOverrides }: SitePageProps) {
       <section className="container py-8">
         <SitePageIntro />
         <div className="space-y-6">
+          {session ? (
+            <SiteIntervenantsSection
+              key={`${siteId}:${session.user.id}`}
+              accessToken={session.accessToken}
+              organizationId={session.organization.id}
+              siteId={siteId}
+              userId={session.user.id}
+            />
+          ) : null}
           <WorkerTasksBlock
             canViewWorkerTasks={permissions.canViewWorkerTasks}
             services={services}
@@ -79,7 +89,7 @@ function SitePageIntro() {
           Fiche chantier
         </h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Consultez le planning et gérez les documents associés à ce chantier.
+          Consultez le planning, gérez les intervenants et les documents associés à ce chantier.
         </p>
       </div>
     </div>

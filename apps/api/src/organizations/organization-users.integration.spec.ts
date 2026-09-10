@@ -17,6 +17,7 @@ import {
   deleteCreatedOrganizations,
   removeUserRoles,
 } from "./organization-invitations-test-helpers.js";
+import { setUserRoles } from "../sites/sites-test-helpers.js";
 import type {
   OrganizationUserResponseDto,
   OrganizationUsersResponseDto,
@@ -95,6 +96,21 @@ it("rejects organization users listing when requester is not organization admin"
     .get(`/api/organizations/${account.response.organization.id}/users`)
     .set("Authorization", `Bearer ${account.response.accessToken}`)
     .expect(403);
+});
+
+it("allows a construction manager to list organization users", async () => {
+  const account = await createRegisteredAccount();
+  const organizationUser = await createTestOrganizationUser(account.response.organization.id);
+
+  await setUserRoles(databaseService, account.response.user.id, ["chef_chantier"]);
+
+  const response = await request(getHttpServer())
+    .get(`/api/organizations/${account.response.organization.id}/users`)
+    .set("Authorization", `Bearer ${account.response.accessToken}`)
+    .expect(200);
+  const responseBody = parseOrganizationUsersResponse(response);
+
+  expect(getResponseUser(responseBody, organizationUser.id).id).toBe(organizationUser.id);
 });
 
 function getHttpServer(): Server {
