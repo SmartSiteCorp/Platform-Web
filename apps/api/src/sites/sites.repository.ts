@@ -51,6 +51,10 @@ export class SitesRepository implements SitesRepositoryPort {
         throw new Error("Le chantier n'a pas pu être créé.");
       }
 
+      await transaction.query(
+        "INSERT INTO project_users (project_id, user_id, organization_id) VALUES ($1, $2, $3)",
+        [site.id, input.createdBy, input.organizationId],
+      );
       await this.insertSiteCreatorMembership(transaction, site.id, input.createdBy);
 
       // Journalisation atomique avec la création du chantier.
