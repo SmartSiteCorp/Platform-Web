@@ -38,6 +38,7 @@ export class ProjectUsersRepository {
     projectId: string,
     userId: string,
     organizationId: string,
+    actorUserId: string,
   ): Promise<
     ProjectUserResponseDto | "missing" | "foreign" | "inactive" | "no_roles" | "duplicate"
   > {
@@ -51,8 +52,13 @@ export class ProjectUsersRepository {
       if (user.organization_id !== organizationId) return "foreign";
       if (user.status !== "active") return "inactive";
 
-      const roles = await transaction.query<{ role_id: string }>(
-        "SELECT role_id FROM user_roles WHERE user_id = $1",
+      const roles = await transaction.query<{ role_id: string; role_code: string }>(
+        `
+          SELECT user_roles.role_id, roles.code AS role_code
+          FROM user_roles
+          INNER JOIN roles ON roles.id = user_roles.role_id
+          WHERE user_roles.user_id = $1
+        `,
         [userId],
       );
       if (roles.rows.length === 0) return "no_roles";
@@ -72,6 +78,24 @@ export class ProjectUsersRepository {
           SELECT $1, $2, unnest($3::uuid[]) ON CONFLICT DO NOTHING
         `,
         [projectId, userId, roles.rows.map((role) => role.role_id)],
+      );
+      await transaction.query(
+        `
+          INSERT INTO organization_audit_logs
+            (organization_id, actor_user_id, action, changed_fields, metadata)
+          VALUES ($1, $2, $3, $4, $5::jsonb)
+        `,
+        [
+          organizationId,
+          actorUserId,
+          "project.user_added",
+          ["projectUser"],
+          JSON.stringify({
+            projectId,
+            roleCodes: roles.rows.map((role) => role.role_code),
+            userId,
+          }),
+        ],
       );
       const members = await this.findUsers(transaction, projectId, userId);
       const member = members[0];

@@ -27,7 +27,7 @@ export class ProjectUsersService {
     actor: AccessTokenPayload,
   ): Promise<ProjectUserResponseDto> {
     await this.assertAccess(projectId, actor, siteManagementRoleCodes);
-    const result = await this.repository.add(projectId, userId, actor.organizationId);
+    const result = await this.repository.add(projectId, userId, actor.organizationId, actor.sub);
     switch (result) {
       case "missing":
         throw new NotFoundException(["L'utilisateur est introuvable."]);
