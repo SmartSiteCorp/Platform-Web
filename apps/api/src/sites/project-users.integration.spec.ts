@@ -140,6 +140,28 @@ it("associe un utilisateur, conserve ses roles et liste aussi le createur", asyn
   });
 });
 
+it("associe plusieurs intervenants valides au même chantier", async () => {
+  const secondMember = await createOrganizationUser(database, account.response.organization.id, [
+    "architecte",
+  ]);
+
+  const responses = await Promise.all([add(), add(secondMember.id)]);
+
+  expect(responses.map((response) => response.status).sort()).toEqual([201, 201]);
+  const persisted = await database.query<{ readonly user_id: string }>(
+    `
+      SELECT user_id
+      FROM project_users
+      WHERE project_id = $1 AND user_id = ANY($2::uuid[])
+      ORDER BY user_id
+    `,
+    [projectId, [memberId, secondMember.id]],
+  );
+  expect(persisted.rows.map((row) => row.user_id).sort()).toEqual(
+    [memberId, secondMember.id].sort(),
+  );
+});
+
 it("refuse les doublons meme en concurrence", async () => {
   const responses = await Promise.all([add(), add()]);
   expect(responses.map((response) => response.status).sort()).toEqual([201, 409]);

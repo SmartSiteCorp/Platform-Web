@@ -67,6 +67,20 @@ it("charge organisation et intervenants, affiche noms et roles", async () => {
   expect(screen.getByRole("button", { name: "Ajouter les intervenants (0)" })).toBeDisabled();
 });
 
+it.each([
+  ["mobile (390px)", 390],
+  ["tablette (768px)", 768],
+])("reste utilisable en %s", async (_label, width) => {
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+
+  render(<SiteIntervenantsSection {...props} />);
+
+  expect(await screen.findByRole("heading", { name: "Intervenants" })).toBeInTheDocument();
+  expect(screen.getByRole("list", { name: "Intervenants du chantier" })).toBeInTheDocument();
+  expect(screen.getByRole("form", { name: "Ajouter des intervenants" })).toBeInTheDocument();
+  expect(screen.getByRole("checkbox", { name: "Sélectionner Paul Durand" })).toBeInTheDocument();
+});
+
 it("ajoute plusieurs utilisateurs et actualise liste sans rechargement de page", async () => {
   render(<SiteIntervenantsSection {...props} />);
   await select("Paul Durand");
