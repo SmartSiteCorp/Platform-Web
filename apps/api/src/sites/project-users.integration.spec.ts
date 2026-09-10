@@ -111,6 +111,33 @@ it("associe un utilisateur, conserve ses roles et liste aussi le createur", asyn
     [projectId, memberId],
   );
   expect(roles.rows).toEqual([{ code: "ouvrier" }]);
+
+  const audit = await database.query<{
+    readonly action: string;
+    readonly actor_user_id: string;
+    readonly changed_fields: string[];
+    readonly metadata: {
+      readonly projectId: string;
+      readonly roleCodes: string[];
+      readonly userId: string;
+    };
+  }>(
+    `
+      SELECT action, actor_user_id, changed_fields, metadata
+      FROM organization_audit_logs
+      WHERE organization_id = $1 AND action = 'project.user_added'
+        AND metadata->>'projectId' = $2 AND metadata->>'userId' = $3
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [account.response.organization.id, projectId, memberId],
+  );
+  expect(audit.rows[0]).toMatchObject({
+    action: "project.user_added",
+    actor_user_id: account.response.user.id,
+    changed_fields: ["projectUser"],
+    metadata: { projectId, roleCodes: ["ouvrier"], userId: memberId },
+  });
 });
 
 it("refuse les doublons meme en concurrence", async () => {
