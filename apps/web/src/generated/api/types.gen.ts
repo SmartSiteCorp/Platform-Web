@@ -538,6 +538,24 @@ export type SiteResponseDto = {
     updatedAt: string;
 };
 
+export type AddProjectUserRequestDto = {
+    /**
+     * Utilisateur de la même organisation à associer.
+     */
+    userId: string;
+};
+
+export type ProjectUserResponseDto = {
+    projectId: string;
+    userId: string;
+    firstName: string;
+    lastName: string;
+    /**
+     * Rôles effectifs de l'utilisateur sur le chantier.
+     */
+    roleCodes: Array<string>;
+};
+
 export type AuthControllerRegisterData = {
     body: RegisterRequestDto;
     path?: never;
@@ -1401,3 +1419,58 @@ export type SitesControllerCreateSiteResponses = {
 };
 
 export type SitesControllerCreateSiteResponse = SitesControllerCreateSiteResponses[keyof SitesControllerCreateSiteResponses];
+
+export type ProjectUsersControllerListData = {
+    body?: never;
+    path: {
+        /**
+         * Identifiant du chantier (sites.id).
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/projects/{id}/users';
+};
+
+export type ProjectUsersControllerListErrors = {
+    400: ApiErrorResponseDto;
+    401: ApiErrorResponseDto;
+    403: ApiErrorResponseDto;
+    404: ApiErrorResponseDto;
+};
+
+export type ProjectUsersControllerListError = ProjectUsersControllerListErrors[keyof ProjectUsersControllerListErrors];
+
+export type ProjectUsersControllerListResponses = {
+    200: Array<ProjectUserResponseDto>;
+};
+
+export type ProjectUsersControllerListResponse = ProjectUsersControllerListResponses[keyof ProjectUsersControllerListResponses];
+
+export type ProjectUsersControllerAddData = {
+    body: AddProjectUserRequestDto;
+    path: {
+        /**
+         * Identifiant du chantier (sites.id).
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/projects/{id}/users';
+};
+
+export type ProjectUsersControllerAddErrors = {
+    400: ApiErrorResponseDto;
+    401: ApiErrorResponseDto;
+    403: ApiErrorResponseDto;
+    404: ApiErrorResponseDto;
+    409: ApiErrorResponseDto;
+};
+
+export type ProjectUsersControllerAddError = ProjectUsersControllerAddErrors[keyof ProjectUsersControllerAddErrors];
+
+export type ProjectUsersControllerAddResponses = {
+    201: ProjectUserResponseDto;
+};
+
+export type ProjectUsersControllerAddResponse = ProjectUsersControllerAddResponses[keyof ProjectUsersControllerAddResponses];
