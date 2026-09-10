@@ -13,6 +13,10 @@ import type { UploadDocumentSubmitter } from "./upload-document-form";
 import type { DocumentDownloader, ListDocumentsLoader } from "./site-documents-section";
 import type { WorkerAssignedTasksLoader } from "./worker-assigned-tasks-section";
 
+vi.mock("@/lib/project-users", () => ({
+  listProjectUsers: () => Promise.resolve({ ok: true, data: [] }),
+}));
+
 const routerMock = vi.hoisted(() => ({
   push: vi.fn<(url: string) => void>(),
   replace: vi.fn<(url: string) => void>(),
@@ -106,6 +110,7 @@ describe("SitePage - session", () => {
     renderPage(createEmptyListLoader(), createSuccessUploader());
 
     expect(await screen.findByRole("heading", { name: "Fiche chantier" })).toBeInTheDocument();
+    expect(screen.getByText("Intervenants")).toBeInTheDocument();
   });
 
   it("affiche les taches assignees pour un ouvrier", async () => {

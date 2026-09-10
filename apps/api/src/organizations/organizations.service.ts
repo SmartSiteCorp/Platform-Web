@@ -71,7 +71,10 @@ export class OrganizationsService {
     organizationId: string,
     user: AccessTokenPayload,
   ): Promise<OrganizationUsersResponseDto> {
-    await this.assertCanManageOrganization(organizationId, user);
+    await this.assertUserHasAnyRole(organizationId, user, [
+      organizationAdminRoleCode,
+      "chef_chantier",
+    ]);
 
     return {
       organizationId,
