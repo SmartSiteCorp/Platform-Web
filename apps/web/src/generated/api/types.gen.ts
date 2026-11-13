@@ -5,6 +5,32 @@ export type ClientOptions = {
     baseUrl: string;
 };
 
+export type CreateArchitectRequestRequestDto = {
+    missionDescription?: string | null;
+    requestedDate?: string | null;
+};
+
+export type ArchitectRequestResponseDto = {
+    id: string;
+    siteId: string;
+    missionDescription: string | null;
+    requestedDate: string | null;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ApiErrorResponseDto = {
+    statusCode: number;
+    message: Array<string>;
+    error?: string;
+};
+
+export type ArchitectRequestsResponseDto = {
+    siteId: string;
+    architectRequests: Array<ArchitectRequestResponseDto>;
+};
+
 export type RegisterRequestDto = {
     organizationName: string;
     email: string;
@@ -40,12 +66,6 @@ export type RegisterResponseDto = {
     accessToken: string;
 };
 
-export type ApiErrorResponseDto = {
-    statusCode: number;
-    message: Array<string>;
-    error?: string;
-};
-
 export type LoginRequestDto = {
     email: string;
     password: string;
@@ -56,6 +76,85 @@ export type LoginResponseDto = {
     organization: RegisteredOrganizationDto;
     tokenType: string;
     accessToken: string;
+};
+
+export type OrganizationResponseDto = {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type OrganizationUserResponseDto = {
+    id: string;
+    organizationId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    status: string;
+    roleCodes: Array<string>;
+    createdAt: string;
+};
+
+export type OrganizationUsersResponseDto = {
+    organizationId: string;
+    users: Array<OrganizationUserResponseDto>;
+};
+
+export type UpdateOrganizationRequestDto = {
+    name: string;
+    email: string;
+    phone?: string | null;
+    address?: string | null;
+};
+
+export type CreateOrganizationInvitationRequestDto = {
+    email: string;
+    roleCodes: Array<string>;
+};
+
+export type OrganizationInvitationResponseDto = {
+    id: string;
+    organizationId: string;
+    email: string;
+    roleCodes: Array<string>;
+    token: string;
+    expiresAt: string;
+    createdAt: string;
+};
+
+export type AcceptOrganizationInvitationRequestDto = {
+    token: string;
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+};
+
+export type AcceptOrganizationInvitationResponseDto = {
+    user: RegisteredUserDto;
+    organization: RegisteredOrganizationDto;
+    tokenType: string;
+    accessToken: string;
+};
+
+export type OrganizationUserRolesResponseDto = {
+    organizationId: string;
+    userId: string;
+    roleCodes: Array<string>;
+};
+
+export type AddOrganizationUserRoleRequestDto = {
+    roleCode: string;
+};
+
+export type UpdateOrganizationUserRolesRequestDto = {
+    roleCodes: Array<string>;
 };
 
 export type ArchitectDashboardStatsResponseDto = {
@@ -335,85 +434,6 @@ export type DroneOperatorDashboardResponseDto = {
     emptyState?: DroneOperatorDashboardEmptyStateResponseDto | null;
 };
 
-export type OrganizationResponseDto = {
-    id: string;
-    name: string;
-    email: string | null;
-    phone: string | null;
-    address: string | null;
-    createdAt: string;
-    updatedAt: string;
-};
-
-export type OrganizationUserResponseDto = {
-    id: string;
-    organizationId: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    phone: string | null;
-    status: string;
-    roleCodes: Array<string>;
-    createdAt: string;
-};
-
-export type OrganizationUsersResponseDto = {
-    organizationId: string;
-    users: Array<OrganizationUserResponseDto>;
-};
-
-export type UpdateOrganizationRequestDto = {
-    name: string;
-    email: string;
-    phone?: string | null;
-    address?: string | null;
-};
-
-export type CreateOrganizationInvitationRequestDto = {
-    email: string;
-    roleCodes: Array<string>;
-};
-
-export type OrganizationInvitationResponseDto = {
-    id: string;
-    organizationId: string;
-    email: string;
-    roleCodes: Array<string>;
-    token: string;
-    expiresAt: string;
-    createdAt: string;
-};
-
-export type AcceptOrganizationInvitationRequestDto = {
-    token: string;
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    phone?: string;
-};
-
-export type AcceptOrganizationInvitationResponseDto = {
-    user: RegisteredUserDto;
-    organization: RegisteredOrganizationDto;
-    tokenType: string;
-    accessToken: string;
-};
-
-export type OrganizationUserRolesResponseDto = {
-    organizationId: string;
-    userId: string;
-    roleCodes: Array<string>;
-};
-
-export type AddOrganizationUserRoleRequestDto = {
-    roleCode: string;
-};
-
-export type UpdateOrganizationUserRolesRequestDto = {
-    roleCodes: Array<string>;
-};
-
 export type DocumentFileResponseDto = {
     id: string;
     originalName: string;
@@ -576,6 +596,80 @@ export type ProjectUserResponseDto = {
     roleCodes: Array<string>;
 };
 
+export type ArchitectRequestsControllerListArchitectRequestsData = {
+    body?: never;
+    path: {
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/architect-requests';
+};
+
+export type ArchitectRequestsControllerListArchitectRequestsErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur et accès au chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type ArchitectRequestsControllerListArchitectRequestsError = ArchitectRequestsControllerListArchitectRequestsErrors[keyof ArchitectRequestsControllerListArchitectRequestsErrors];
+
+export type ArchitectRequestsControllerListArchitectRequestsResponses = {
+    /**
+     * Demandes d'architecte partenaire du chantier.
+     */
+    200: ArchitectRequestsResponseDto;
+};
+
+export type ArchitectRequestsControllerListArchitectRequestsResponse = ArchitectRequestsControllerListArchitectRequestsResponses[keyof ArchitectRequestsControllerListArchitectRequestsResponses];
+
+export type ArchitectRequestsControllerCreateArchitectRequestData = {
+    body: CreateArchitectRequestRequestDto;
+    path: {
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/architect-requests';
+};
+
+export type ArchitectRequestsControllerCreateArchitectRequestErrors = {
+    /**
+     * Données de la demande invalides.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur et accès au chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type ArchitectRequestsControllerCreateArchitectRequestError = ArchitectRequestsControllerCreateArchitectRequestErrors[keyof ArchitectRequestsControllerCreateArchitectRequestErrors];
+
+export type ArchitectRequestsControllerCreateArchitectRequestResponses = {
+    /**
+     * Demande d'architecte partenaire créée avec succès.
+     */
+    201: ArchitectRequestResponseDto;
+};
+
+export type ArchitectRequestsControllerCreateArchitectRequestResponse = ArchitectRequestsControllerCreateArchitectRequestResponses[keyof ArchitectRequestsControllerCreateArchitectRequestResponses];
+
 export type AuthControllerRegisterData = {
     body: RegisterRequestDto;
     path?: never;
@@ -631,132 +725,6 @@ export type AuthControllerLoginResponses = {
 };
 
 export type AuthControllerLoginResponse = AuthControllerLoginResponses[keyof AuthControllerLoginResponses];
-
-export type DashboardControllerGetArchitectDashboardData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Filtre optionnel sur un chantier accessible à l'architecte.
-         */
-        siteId?: string;
-    };
-    url: '/api/dashboard/architect';
-};
-
-export type DashboardControllerGetArchitectDashboardErrors = {
-    /**
-     * Filtre dashboard architecte invalide.
-     */
-    400: ApiErrorResponseDto;
-    /**
-     * Token JWT manquant ou invalide.
-     */
-    401: ApiErrorResponseDto;
-    /**
-     * Rôle Architecte ou Administrateur et accès chantier requis.
-     */
-    403: ApiErrorResponseDto;
-    /**
-     * Chantier introuvable.
-     */
-    404: ApiErrorResponseDto;
-};
-
-export type DashboardControllerGetArchitectDashboardError = DashboardControllerGetArchitectDashboardErrors[keyof DashboardControllerGetArchitectDashboardErrors];
-
-export type DashboardControllerGetArchitectDashboardResponses = {
-    /**
-     * Agrégation du dashboard architecte.
-     */
-    200: ArchitectDashboardResponseDto;
-};
-
-export type DashboardControllerGetArchitectDashboardResponse = DashboardControllerGetArchitectDashboardResponses[keyof DashboardControllerGetArchitectDashboardResponses];
-
-export type DashboardControllerGetSiteManagerDashboardData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Filtre optionnel sur un chantier accessible au chef de chantier.
-         */
-        siteId?: string;
-    };
-    url: '/api/dashboard/site-manager';
-};
-
-export type DashboardControllerGetSiteManagerDashboardErrors = {
-    /**
-     * Filtre dashboard invalide.
-     */
-    400: ApiErrorResponseDto;
-    /**
-     * Token JWT manquant ou invalide.
-     */
-    401: ApiErrorResponseDto;
-    /**
-     * Rôle Chef de chantier ou Administrateur et accès chantier requis.
-     */
-    403: ApiErrorResponseDto;
-    /**
-     * Chantier introuvable.
-     */
-    404: ApiErrorResponseDto;
-};
-
-export type DashboardControllerGetSiteManagerDashboardError = DashboardControllerGetSiteManagerDashboardErrors[keyof DashboardControllerGetSiteManagerDashboardErrors];
-
-export type DashboardControllerGetSiteManagerDashboardResponses = {
-    /**
-     * Agrégation du dashboard chef de chantier.
-     */
-    200: SiteManagerDashboardResponseDto;
-};
-
-export type DashboardControllerGetSiteManagerDashboardResponse = DashboardControllerGetSiteManagerDashboardResponses[keyof DashboardControllerGetSiteManagerDashboardResponses];
-
-export type DashboardControllerGetDroneOperatorDashboardData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Filtre optionnel sur un chantier accessible au droniste.
-         */
-        siteId?: string;
-    };
-    url: '/api/dashboard/drone-operator';
-};
-
-export type DashboardControllerGetDroneOperatorDashboardErrors = {
-    /**
-     * Filtre dashboard droniste invalide.
-     */
-    400: ApiErrorResponseDto;
-    /**
-     * Token JWT manquant ou invalide.
-     */
-    401: ApiErrorResponseDto;
-    /**
-     * Rôle Droniste ou Administrateur et accès chantier requis.
-     */
-    403: ApiErrorResponseDto;
-    /**
-     * Chantier introuvable.
-     */
-    404: ApiErrorResponseDto;
-};
-
-export type DashboardControllerGetDroneOperatorDashboardError = DashboardControllerGetDroneOperatorDashboardErrors[keyof DashboardControllerGetDroneOperatorDashboardErrors];
-
-export type DashboardControllerGetDroneOperatorDashboardResponses = {
-    /**
-     * Agrégation du dashboard droniste.
-     */
-    200: DroneOperatorDashboardResponseDto;
-};
-
-export type DashboardControllerGetDroneOperatorDashboardResponse = DashboardControllerGetDroneOperatorDashboardResponses[keyof DashboardControllerGetDroneOperatorDashboardResponses];
 
 export type OrganizationsControllerGetOrganizationData = {
     body?: never;
@@ -1064,6 +1032,132 @@ export type OrganizationUserRolesControllerRemoveUserRoleResponses = {
 };
 
 export type OrganizationUserRolesControllerRemoveUserRoleResponse = OrganizationUserRolesControllerRemoveUserRoleResponses[keyof OrganizationUserRolesControllerRemoveUserRoleResponses];
+
+export type DashboardControllerGetArchitectDashboardData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Filtre optionnel sur un chantier accessible à l'architecte.
+         */
+        siteId?: string;
+    };
+    url: '/api/dashboard/architect';
+};
+
+export type DashboardControllerGetArchitectDashboardErrors = {
+    /**
+     * Filtre dashboard architecte invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Architecte ou Administrateur et accès chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DashboardControllerGetArchitectDashboardError = DashboardControllerGetArchitectDashboardErrors[keyof DashboardControllerGetArchitectDashboardErrors];
+
+export type DashboardControllerGetArchitectDashboardResponses = {
+    /**
+     * Agrégation du dashboard architecte.
+     */
+    200: ArchitectDashboardResponseDto;
+};
+
+export type DashboardControllerGetArchitectDashboardResponse = DashboardControllerGetArchitectDashboardResponses[keyof DashboardControllerGetArchitectDashboardResponses];
+
+export type DashboardControllerGetSiteManagerDashboardData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Filtre optionnel sur un chantier accessible au chef de chantier.
+         */
+        siteId?: string;
+    };
+    url: '/api/dashboard/site-manager';
+};
+
+export type DashboardControllerGetSiteManagerDashboardErrors = {
+    /**
+     * Filtre dashboard invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur et accès chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DashboardControllerGetSiteManagerDashboardError = DashboardControllerGetSiteManagerDashboardErrors[keyof DashboardControllerGetSiteManagerDashboardErrors];
+
+export type DashboardControllerGetSiteManagerDashboardResponses = {
+    /**
+     * Agrégation du dashboard chef de chantier.
+     */
+    200: SiteManagerDashboardResponseDto;
+};
+
+export type DashboardControllerGetSiteManagerDashboardResponse = DashboardControllerGetSiteManagerDashboardResponses[keyof DashboardControllerGetSiteManagerDashboardResponses];
+
+export type DashboardControllerGetDroneOperatorDashboardData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Filtre optionnel sur un chantier accessible au droniste.
+         */
+        siteId?: string;
+    };
+    url: '/api/dashboard/drone-operator';
+};
+
+export type DashboardControllerGetDroneOperatorDashboardErrors = {
+    /**
+     * Filtre dashboard droniste invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Droniste ou Administrateur et accès chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DashboardControllerGetDroneOperatorDashboardError = DashboardControllerGetDroneOperatorDashboardErrors[keyof DashboardControllerGetDroneOperatorDashboardErrors];
+
+export type DashboardControllerGetDroneOperatorDashboardResponses = {
+    /**
+     * Agrégation du dashboard droniste.
+     */
+    200: DroneOperatorDashboardResponseDto;
+};
+
+export type DashboardControllerGetDroneOperatorDashboardResponse = DashboardControllerGetDroneOperatorDashboardResponses[keyof DashboardControllerGetDroneOperatorDashboardResponses];
 
 export type DocumentsControllerListDocumentsData = {
     body?: never;

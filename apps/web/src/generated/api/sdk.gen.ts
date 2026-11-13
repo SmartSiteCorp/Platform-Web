@@ -3,7 +3,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, DashboardControllerGetArchitectDashboardData, DashboardControllerGetArchitectDashboardErrors, DashboardControllerGetArchitectDashboardResponses, DashboardControllerGetDroneOperatorDashboardData, DashboardControllerGetDroneOperatorDashboardErrors, DashboardControllerGetDroneOperatorDashboardResponses, DashboardControllerGetSiteManagerDashboardData, DashboardControllerGetSiteManagerDashboardErrors, DashboardControllerGetSiteManagerDashboardResponses, DocumentsControllerDownloadDocumentData, DocumentsControllerDownloadDocumentErrors, DocumentsControllerDownloadDocumentResponses, DocumentsControllerListDocumentsData, DocumentsControllerListDocumentsErrors, DocumentsControllerListDocumentsResponses, DocumentsControllerUploadDocumentData, DocumentsControllerUploadDocumentErrors, DocumentsControllerUploadDocumentResponses, DroneRequestsControllerCreateDroneRequestData, DroneRequestsControllerCreateDroneRequestErrors, DroneRequestsControllerCreateDroneRequestResponses, DroneRequestsControllerListDroneRequestsData, DroneRequestsControllerListDroneRequestsErrors, DroneRequestsControllerListDroneRequestsResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerListOrganizationUsersData, OrganizationsControllerListOrganizationUsersErrors, OrganizationsControllerListOrganizationUsersResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses, OrganizationUserRolesControllerAddUserRoleData, OrganizationUserRolesControllerAddUserRoleErrors, OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerGetUserRolesData, OrganizationUserRolesControllerGetUserRolesErrors, OrganizationUserRolesControllerGetUserRolesResponses, OrganizationUserRolesControllerRemoveUserRoleData, OrganizationUserRolesControllerRemoveUserRoleErrors, OrganizationUserRolesControllerRemoveUserRoleResponses, OrganizationUserRolesControllerUpdateUserRolesData, OrganizationUserRolesControllerUpdateUserRolesErrors, OrganizationUserRolesControllerUpdateUserRolesResponses, PhasesControllerCreatePhaseData, PhasesControllerCreatePhaseErrors, PhasesControllerCreatePhaseResponses, PhasesControllerUpdatePhaseData, PhasesControllerUpdatePhaseErrors, PhasesControllerUpdatePhaseResponses, ProjectUsersControllerAddData, ProjectUsersControllerAddErrors, ProjectUsersControllerAddResponses, ProjectUsersControllerListData, ProjectUsersControllerListErrors, ProjectUsersControllerListResponses, ResourceAssignmentsControllerAssignWorkersToPhaseData, ResourceAssignmentsControllerAssignWorkersToPhaseErrors, ResourceAssignmentsControllerAssignWorkersToPhaseResponses, ResourceAssignmentsControllerListAssignableWorkersData, ResourceAssignmentsControllerListAssignableWorkersErrors, ResourceAssignmentsControllerListAssignableWorkersResponses, ResourceAssignmentsControllerListMyAssignedTasksData, ResourceAssignmentsControllerListMyAssignedTasksErrors, ResourceAssignmentsControllerListMyAssignedTasksResponses, ResourceAssignmentsControllerListPhaseWorkerAssignmentsData, ResourceAssignmentsControllerListPhaseWorkerAssignmentsErrors, ResourceAssignmentsControllerListPhaseWorkerAssignmentsResponses, SitesControllerCreateSiteData, SitesControllerCreateSiteErrors, SitesControllerCreateSiteResponses } from './types.gen';
+import type { ArchitectRequestsControllerCreateArchitectRequestData, ArchitectRequestsControllerCreateArchitectRequestErrors, ArchitectRequestsControllerCreateArchitectRequestResponses, ArchitectRequestsControllerListArchitectRequestsData, ArchitectRequestsControllerListArchitectRequestsErrors, ArchitectRequestsControllerListArchitectRequestsResponses, AuthControllerLoginData, AuthControllerLoginErrors, AuthControllerLoginResponses, AuthControllerRegisterData, AuthControllerRegisterErrors, AuthControllerRegisterResponses, DashboardControllerGetArchitectDashboardData, DashboardControllerGetArchitectDashboardErrors, DashboardControllerGetArchitectDashboardResponses, DashboardControllerGetDroneOperatorDashboardData, DashboardControllerGetDroneOperatorDashboardErrors, DashboardControllerGetDroneOperatorDashboardResponses, DashboardControllerGetSiteManagerDashboardData, DashboardControllerGetSiteManagerDashboardErrors, DashboardControllerGetSiteManagerDashboardResponses, DocumentsControllerDownloadDocumentData, DocumentsControllerDownloadDocumentErrors, DocumentsControllerDownloadDocumentResponses, DocumentsControllerListDocumentsData, DocumentsControllerListDocumentsErrors, DocumentsControllerListDocumentsResponses, DocumentsControllerUploadDocumentData, DocumentsControllerUploadDocumentErrors, DocumentsControllerUploadDocumentResponses, DroneRequestsControllerCreateDroneRequestData, DroneRequestsControllerCreateDroneRequestErrors, DroneRequestsControllerCreateDroneRequestResponses, DroneRequestsControllerListDroneRequestsData, DroneRequestsControllerListDroneRequestsErrors, DroneRequestsControllerListDroneRequestsResponses, HealthControllerGetHealthData, HealthControllerGetHealthResponses, OrganizationInvitationsControllerAcceptInvitationData, OrganizationInvitationsControllerAcceptInvitationErrors, OrganizationInvitationsControllerAcceptInvitationResponses, OrganizationInvitationsControllerCreateInvitationData, OrganizationInvitationsControllerCreateInvitationErrors, OrganizationInvitationsControllerCreateInvitationResponses, OrganizationsControllerGetOrganizationData, OrganizationsControllerGetOrganizationErrors, OrganizationsControllerGetOrganizationResponses, OrganizationsControllerListOrganizationUsersData, OrganizationsControllerListOrganizationUsersErrors, OrganizationsControllerListOrganizationUsersResponses, OrganizationsControllerUpdateOrganizationData, OrganizationsControllerUpdateOrganizationErrors, OrganizationsControllerUpdateOrganizationResponses, OrganizationUserRolesControllerAddUserRoleData, OrganizationUserRolesControllerAddUserRoleErrors, OrganizationUserRolesControllerAddUserRoleResponses, OrganizationUserRolesControllerGetUserRolesData, OrganizationUserRolesControllerGetUserRolesErrors, OrganizationUserRolesControllerGetUserRolesResponses, OrganizationUserRolesControllerRemoveUserRoleData, OrganizationUserRolesControllerRemoveUserRoleErrors, OrganizationUserRolesControllerRemoveUserRoleResponses, OrganizationUserRolesControllerUpdateUserRolesData, OrganizationUserRolesControllerUpdateUserRolesErrors, OrganizationUserRolesControllerUpdateUserRolesResponses, PhasesControllerCreatePhaseData, PhasesControllerCreatePhaseErrors, PhasesControllerCreatePhaseResponses, PhasesControllerUpdatePhaseData, PhasesControllerUpdatePhaseErrors, PhasesControllerUpdatePhaseResponses, ProjectUsersControllerAddData, ProjectUsersControllerAddErrors, ProjectUsersControllerAddResponses, ProjectUsersControllerListData, ProjectUsersControllerListErrors, ProjectUsersControllerListResponses, ResourceAssignmentsControllerAssignWorkersToPhaseData, ResourceAssignmentsControllerAssignWorkersToPhaseErrors, ResourceAssignmentsControllerAssignWorkersToPhaseResponses, ResourceAssignmentsControllerListAssignableWorkersData, ResourceAssignmentsControllerListAssignableWorkersErrors, ResourceAssignmentsControllerListAssignableWorkersResponses, ResourceAssignmentsControllerListMyAssignedTasksData, ResourceAssignmentsControllerListMyAssignedTasksErrors, ResourceAssignmentsControllerListMyAssignedTasksResponses, ResourceAssignmentsControllerListPhaseWorkerAssignmentsData, ResourceAssignmentsControllerListPhaseWorkerAssignmentsErrors, ResourceAssignmentsControllerListPhaseWorkerAssignmentsResponses, SitesControllerCreateSiteData, SitesControllerCreateSiteErrors, SitesControllerCreateSiteResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,6 +18,22 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: Record<string, unknown>;
 };
+
+export const architectRequestsControllerListArchitectRequests = <ThrowOnError extends boolean = false>(options: Options<ArchitectRequestsControllerListArchitectRequestsData, ThrowOnError>) => (options.client ?? client).get<ArchitectRequestsControllerListArchitectRequestsResponses, ArchitectRequestsControllerListArchitectRequestsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/sites/{siteId}/architect-requests',
+    ...options
+});
+
+export const architectRequestsControllerCreateArchitectRequest = <ThrowOnError extends boolean = false>(options: Options<ArchitectRequestsControllerCreateArchitectRequestData, ThrowOnError>) => (options.client ?? client).post<ArchitectRequestsControllerCreateArchitectRequestResponses, ArchitectRequestsControllerCreateArchitectRequestErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/sites/{siteId}/architect-requests',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 export const authControllerRegister = <ThrowOnError extends boolean = false>(options: Options<AuthControllerRegisterData, ThrowOnError>) => (options.client ?? client).post<AuthControllerRegisterResponses, AuthControllerRegisterErrors, ThrowOnError>({
     url: '/api/auth/register',
@@ -35,24 +51,6 @@ export const authControllerLogin = <ThrowOnError extends boolean = false>(option
         'Content-Type': 'application/json',
         ...options.headers
     }
-});
-
-export const dashboardControllerGetArchitectDashboard = <ThrowOnError extends boolean = false>(options?: Options<DashboardControllerGetArchitectDashboardData, ThrowOnError>) => (options?.client ?? client).get<DashboardControllerGetArchitectDashboardResponses, DashboardControllerGetArchitectDashboardErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/dashboard/architect',
-    ...options
-});
-
-export const dashboardControllerGetSiteManagerDashboard = <ThrowOnError extends boolean = false>(options?: Options<DashboardControllerGetSiteManagerDashboardData, ThrowOnError>) => (options?.client ?? client).get<DashboardControllerGetSiteManagerDashboardResponses, DashboardControllerGetSiteManagerDashboardErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/dashboard/site-manager',
-    ...options
-});
-
-export const dashboardControllerGetDroneOperatorDashboard = <ThrowOnError extends boolean = false>(options?: Options<DashboardControllerGetDroneOperatorDashboardData, ThrowOnError>) => (options?.client ?? client).get<DashboardControllerGetDroneOperatorDashboardResponses, DashboardControllerGetDroneOperatorDashboardErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/api/dashboard/drone-operator',
-    ...options
 });
 
 export const organizationsControllerGetOrganization = <ThrowOnError extends boolean = false>(options: Options<OrganizationsControllerGetOrganizationData, ThrowOnError>) => (options.client ?? client).get<OrganizationsControllerGetOrganizationResponses, OrganizationsControllerGetOrganizationErrors, ThrowOnError>({
@@ -125,6 +123,24 @@ export const organizationUserRolesControllerUpdateUserRoles = <ThrowOnError exte
 export const organizationUserRolesControllerRemoveUserRole = <ThrowOnError extends boolean = false>(options: Options<OrganizationUserRolesControllerRemoveUserRoleData, ThrowOnError>) => (options.client ?? client).delete<OrganizationUserRolesControllerRemoveUserRoleResponses, OrganizationUserRolesControllerRemoveUserRoleErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/organizations/{organizationId}/users/{userId}/roles/{roleCode}',
+    ...options
+});
+
+export const dashboardControllerGetArchitectDashboard = <ThrowOnError extends boolean = false>(options?: Options<DashboardControllerGetArchitectDashboardData, ThrowOnError>) => (options?.client ?? client).get<DashboardControllerGetArchitectDashboardResponses, DashboardControllerGetArchitectDashboardErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/dashboard/architect',
+    ...options
+});
+
+export const dashboardControllerGetSiteManagerDashboard = <ThrowOnError extends boolean = false>(options?: Options<DashboardControllerGetSiteManagerDashboardData, ThrowOnError>) => (options?.client ?? client).get<DashboardControllerGetSiteManagerDashboardResponses, DashboardControllerGetSiteManagerDashboardErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/dashboard/site-manager',
+    ...options
+});
+
+export const dashboardControllerGetDroneOperatorDashboard = <ThrowOnError extends boolean = false>(options?: Options<DashboardControllerGetDroneOperatorDashboardData, ThrowOnError>) => (options?.client ?? client).get<DashboardControllerGetDroneOperatorDashboardResponses, DashboardControllerGetDroneOperatorDashboardErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/dashboard/drone-operator',
     ...options
 });
 
