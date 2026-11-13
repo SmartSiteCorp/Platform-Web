@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 
+import { ArchitectRequestsModule } from "./architect-requests/architect-requests.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { DashboardModule } from "./dashboard/dashboard.module.js";
 import { DatabaseModule } from "./database/database.module.js";
@@ -19,6 +20,7 @@ import { SitesModule } from "./sites/sites.module.js";
       envFilePath: getEnvironmentFilePaths(),
       isGlobal: true,
     }),
+    ArchitectRequestsModule,
     AuthModule,
     DashboardModule,
     DatabaseModule,
