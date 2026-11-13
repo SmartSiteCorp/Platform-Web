@@ -437,6 +437,26 @@ export type DocumentListResponseDto = {
     documents: Array<DocumentResponseDto>;
 };
 
+export type CreateDroneRequestRequestDto = {
+    missionDescription?: string | null;
+    requestedDate?: string | null;
+};
+
+export type DroneRequestResponseDto = {
+    id: string;
+    siteId: string;
+    missionDescription: string | null;
+    requestedDate: string | null;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type DroneRequestsResponseDto = {
+    siteId: string;
+    droneRequests: Array<DroneRequestResponseDto>;
+};
+
 export type HealthResponseDto = {
     status: string;
     message: string;
@@ -1148,6 +1168,80 @@ export type DocumentsControllerDownloadDocumentResponses = {
      */
     200: unknown;
 };
+
+export type DroneRequestsControllerListDroneRequestsData = {
+    body?: never;
+    path: {
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/drone-requests';
+};
+
+export type DroneRequestsControllerListDroneRequestsErrors = {
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur et accès au chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DroneRequestsControllerListDroneRequestsError = DroneRequestsControllerListDroneRequestsErrors[keyof DroneRequestsControllerListDroneRequestsErrors];
+
+export type DroneRequestsControllerListDroneRequestsResponses = {
+    /**
+     * Demandes de droniste du chantier.
+     */
+    200: DroneRequestsResponseDto;
+};
+
+export type DroneRequestsControllerListDroneRequestsResponse = DroneRequestsControllerListDroneRequestsResponses[keyof DroneRequestsControllerListDroneRequestsResponses];
+
+export type DroneRequestsControllerCreateDroneRequestData = {
+    body: CreateDroneRequestRequestDto;
+    path: {
+        siteId: string;
+    };
+    query?: never;
+    url: '/api/sites/{siteId}/drone-requests';
+};
+
+export type DroneRequestsControllerCreateDroneRequestErrors = {
+    /**
+     * Données de la demande invalides.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur et accès au chantier requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Chantier introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type DroneRequestsControllerCreateDroneRequestError = DroneRequestsControllerCreateDroneRequestErrors[keyof DroneRequestsControllerCreateDroneRequestErrors];
+
+export type DroneRequestsControllerCreateDroneRequestResponses = {
+    /**
+     * Demande de droniste créée avec succès.
+     */
+    201: DroneRequestResponseDto;
+};
+
+export type DroneRequestsControllerCreateDroneRequestResponse = DroneRequestsControllerCreateDroneRequestResponses[keyof DroneRequestsControllerCreateDroneRequestResponses];
 
 export type HealthControllerGetHealthData = {
     body?: never;

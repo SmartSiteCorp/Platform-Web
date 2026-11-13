@@ -5,6 +5,7 @@ import { AuthModule } from "./auth/auth.module.js";
 import { DashboardModule } from "./dashboard/dashboard.module.js";
 import { DatabaseModule } from "./database/database.module.js";
 import { DocumentsModule } from "./documents/documents.module.js";
+import { DroneRequestsModule } from "./drone-requests/drone-requests.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { OrganizationsModule } from "./organizations/organizations.module.js";
 import { PlanningModule } from "./planning/planning.module.js";
@@ -22,6 +23,7 @@ import { SitesModule } from "./sites/sites.module.js";
     DashboardModule,
     DatabaseModule,
     DocumentsModule,
+    DroneRequestsModule,
     HealthModule,
     OrganizationsModule,
     PlanningModule,
