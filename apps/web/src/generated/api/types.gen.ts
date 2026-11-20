@@ -483,6 +483,25 @@ export type HealthResponseDto = {
     timestamp: string;
 };
 
+export type PartnerRequestResponseDto = {
+    id: string;
+    partnerType: 'architect' | 'drone';
+    siteId: string;
+    siteName: string;
+    missionDescription: string | null;
+    requestedDate: string | null;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type PartnerRequestsResponseDto = {
+    items: Array<PartnerRequestResponseDto>;
+    page: number;
+    pageSize: number;
+    total: number;
+};
+
 export type CreatePhaseRequestDto = {
     name: string;
     description?: string | null;
@@ -1349,6 +1368,60 @@ export type HealthControllerGetHealthResponses = {
 };
 
 export type HealthControllerGetHealthResponse = HealthControllerGetHealthResponses[keyof HealthControllerGetHealthResponses];
+
+export type PartnerRequestsControllerListPartnerRequestsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Taille de page (défaut 20, max 100).
+         */
+        pageSize?: number;
+        /**
+         * Numéro de page (défaut 1).
+         */
+        page?: number;
+        /**
+         * Filtre optionnel sur un chantier accessible à l'utilisateur.
+         */
+        siteId?: string;
+        /**
+         * Filtre optionnel sur le type de partenaire.
+         */
+        partnerType?: 'architect' | 'drone';
+    };
+    url: '/api/partner-requests';
+};
+
+export type PartnerRequestsControllerListPartnerRequestsErrors = {
+    /**
+     * Filtre ou pagination invalide.
+     */
+    400: ApiErrorResponseDto;
+    /**
+     * Token JWT manquant ou invalide.
+     */
+    401: ApiErrorResponseDto;
+    /**
+     * Rôle Chef de chantier ou Administrateur, et accès au chantier filtré, requis.
+     */
+    403: ApiErrorResponseDto;
+    /**
+     * Le chantier filtré est introuvable.
+     */
+    404: ApiErrorResponseDto;
+};
+
+export type PartnerRequestsControllerListPartnerRequestsError = PartnerRequestsControllerListPartnerRequestsErrors[keyof PartnerRequestsControllerListPartnerRequestsErrors];
+
+export type PartnerRequestsControllerListPartnerRequestsResponses = {
+    /**
+     * Liste paginée des demandes de partenaires (architecte et droniste).
+     */
+    200: PartnerRequestsResponseDto;
+};
+
+export type PartnerRequestsControllerListPartnerRequestsResponse = PartnerRequestsControllerListPartnerRequestsResponses[keyof PartnerRequestsControllerListPartnerRequestsResponses];
 
 export type PhasesControllerCreatePhaseData = {
     body: CreatePhaseRequestDto;
