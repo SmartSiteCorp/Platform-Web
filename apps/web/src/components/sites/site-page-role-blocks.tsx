@@ -2,6 +2,7 @@
 
 import { SitePhasesSection } from "@/components/sites/site-phases-section";
 
+import { PartnerRequestSection } from "./partner-request-section";
 import type { SitePageServices } from "./site-page-services";
 import { WorkerAssignedTasksSection } from "./worker-assigned-tasks-section";
 
@@ -22,6 +23,19 @@ export function WorkerTasksBlock({ canViewWorkerTasks, services, siteId }: Worke
       siteId={siteId}
     />
   );
+}
+
+interface PartnerRequestBlockProps {
+  readonly canRequestPartner: boolean;
+  readonly services: SitePageServices;
+}
+
+export function PartnerRequestBlock({ canRequestPartner, services }: PartnerRequestBlockProps) {
+  if (!canRequestPartner) {
+    return null;
+  }
+
+  return <PartnerRequestSection submitPartnerRequest={services.partnerRequestSubmitter} />;
 }
 
 interface PlanningBlockProps {
