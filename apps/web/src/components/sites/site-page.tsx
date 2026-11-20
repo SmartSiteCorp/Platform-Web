@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRequiredAuthSession } from "@/lib/use-auth-session";
 
-import { PlanningBlock, WorkerTasksBlock } from "./site-page-role-blocks";
+import { PartnerRequestBlock, PlanningBlock, WorkerTasksBlock } from "./site-page-role-blocks";
 import {
   resolveSitePagePermissions,
   resolveSitePageServices,
@@ -51,6 +51,10 @@ export function SitePage({ siteId, ...serviceOverrides }: SitePageProps) {
             siteId={siteId}
           />
           <PlanningBlock canManagePlanning={permissions.canManagePlanning} services={services} />
+          <PartnerRequestBlock
+            canRequestPartner={permissions.canRequestPartner}
+            services={services}
+          />
           <SiteDocumentsSection
             downloadDocument={services.downloader}
             listDocuments={services.documentsLoader}

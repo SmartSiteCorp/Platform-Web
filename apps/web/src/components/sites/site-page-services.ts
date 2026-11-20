@@ -1,5 +1,6 @@
 import type { RegisterResponseDto } from "@/generated/api";
 import { downloadDocument, listDocuments, uploadDocument } from "@/lib/documents";
+import { createPartnerRequest } from "@/lib/partner-requests";
 import { createPhase, updatePhase } from "@/lib/phases";
 import {
   assignPhaseWorkers,
@@ -15,6 +16,7 @@ import type {
   AssignPhaseWorkersSubmitter,
   PhaseWorkerAssignmentsLoader,
 } from "./phase-resource-assignment-panel";
+import type { PartnerRequestSubmitter } from "./partner-request-form";
 import type { DocumentDownloader, ListDocumentsLoader } from "./site-documents-section";
 import type { UploadDocumentSubmitter } from "./upload-document-form";
 import type { WorkerAssignedTasksLoader } from "./worker-assigned-tasks-section";
@@ -27,6 +29,7 @@ export interface SitePageServiceOverrides {
   readonly listDocumentsLoader?: ListDocumentsLoader;
   readonly submitAssignWorkers?: AssignPhaseWorkersSubmitter;
   readonly submitCreatePhase?: CreatePhaseSubmitter;
+  readonly submitPartnerRequest?: PartnerRequestSubmitter;
   readonly submitUpdatePhase?: UpdatePhaseSubmitter;
   readonly submitUpload?: UploadDocumentSubmitter;
 }
@@ -41,6 +44,7 @@ export interface SitePageServices {
   readonly assignWorkersSubmitter: AssignPhaseWorkersSubmitter;
   readonly documentsLoader: ListDocumentsLoader;
   readonly downloader: DocumentDownloader;
+  readonly partnerRequestSubmitter: PartnerRequestSubmitter;
   readonly phaseAssignmentsLoader: PhaseWorkerAssignmentsLoader;
   readonly phaseSubmitter: CreatePhaseSubmitter;
   readonly phaseUpdateSubmitter: UpdatePhaseSubmitter;
@@ -50,6 +54,7 @@ export interface SitePageServices {
 
 export interface SitePagePermissions {
   readonly canManagePlanning: boolean;
+  readonly canRequestPartner: boolean;
   readonly canViewWorkerTasks: boolean;
 }
 
@@ -58,6 +63,7 @@ export function resolveSitePagePermissions(
 ): SitePagePermissions {
   return {
     canManagePlanning: hasAnyRole(session, ["administrateur", "chef_chantier"]),
+    canRequestPartner: hasAnyRole(session, ["administrateur", "chef_chantier"]),
     canViewWorkerTasks: hasAnyRole(session, ["ouvrier"]),
   };
 }
@@ -72,6 +78,7 @@ export function resolveSitePageServices({
   siteId,
   submitAssignWorkers,
   submitCreatePhase,
+  submitPartnerRequest,
   submitUpdatePhase,
   submitUpload,
 }: SitePageServiceOptions): SitePageServices {
@@ -80,12 +87,26 @@ export function resolveSitePageServices({
     assignWorkersSubmitter: submitAssignWorkers ?? createAssignWorkersSubmitter(session),
     documentsLoader: listDocumentsLoader ?? createDocumentsLoader(session),
     downloader: downloadDocumentLoader ?? createDocumentDownloader(session, siteId),
+    partnerRequestSubmitter: submitPartnerRequest ?? createPartnerRequestSubmitter(session, siteId),
     phaseAssignmentsLoader:
       loadPhaseWorkerAssignmentsLoader ?? createPhaseWorkerAssignmentsLoader(session),
     phaseSubmitter: submitCreatePhase ?? createPhaseSubmitter(session, siteId),
     phaseUpdateSubmitter: submitUpdatePhase ?? createPhaseUpdateSubmitter(session, siteId),
     uploader: submitUpload ?? createDocumentUploader(session, siteId),
     workerTasksLoader: loadWorkerAssignedTasksLoader ?? createWorkerAssignedTasksLoader(session),
+  };
+}
+
+function createPartnerRequestSubmitter(
+  session: RegisterResponseDto | null,
+  siteId: string,
+): PartnerRequestSubmitter {
+  return (partnerType, request) => {
+    if (!session) {
+      return Promise.resolve(createSessionExpiredResult());
+    }
+
+    return createPartnerRequest(session.accessToken, siteId, partnerType, request);
   };
 }
 
