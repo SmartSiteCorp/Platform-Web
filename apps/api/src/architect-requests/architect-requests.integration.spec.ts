@@ -1,6 +1,7 @@
 import "reflect-metadata";
 
 import type { INestApplication } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 import { Test } from "@nestjs/testing";
 import type { Server } from "node:http";
 import request, { type Response } from "supertest";
@@ -10,6 +11,7 @@ import { configureHttpApp } from "../app-http.js";
 import { AppModule } from "../app.module.js";
 import { DatabaseService } from "../database/database.service.js";
 import { deleteCreatedOrganizations } from "../organizations/organization-invitations-test-helpers.js";
+import { createOrganizationUser } from "../organizations/organization-user-management-test-helpers.js";
 import {
   createRegisterRequest,
   parseApiErrorResponse,
@@ -145,6 +147,39 @@ it("autorise un administrateur a creer une demande d'architecte", async () => {
   expect(parseArchitectRequestResponse(response).status).toBe("pending");
 });
 
+it("permet a un administrateur du chantier de consulter une demande creee par le chef de chantier", async () => {
+  const chefAccount = await createChefChantierAccount();
+  const siteId = await createSite(chefAccount);
+
+  const created = await createArchitectRequest(
+    chefAccount,
+    siteId,
+    "Avis technique sur la stabilité de la structure",
+  );
+
+  const admin = await createOrganizationUser(
+    databaseService,
+    chefAccount.response.organization.id,
+    ["administrateur"],
+  );
+  await request(getHttpServer())
+    .post(`/api/projects/${siteId}/users`)
+    .set("Authorization", `Bearer ${chefAccount.response.accessToken}`)
+    .send({ userId: admin.id })
+    .expect(201);
+
+  const response = await request(getHttpServer())
+    .get(`/api/sites/${siteId}/architect-requests`)
+    .set("Authorization", `Bearer ${signAdminAccessToken(admin.id, chefAccount)}`)
+    .expect(200);
+
+  const body = parseArchitectRequestsResponse(response);
+
+  expect(body.architectRequests.map((architectRequest) => architectRequest.id)).toContain(
+    created.id,
+  );
+});
+
 it("refuse la creation sans token JWT", async () => {
   await request(getHttpServer())
     .post("/api/sites/00000000-0000-4000-a000-000000000000/architect-requests")
@@ -207,6 +242,15 @@ it("refuse un siteId qui n'est pas un UUID valide", async () => {
 
 function getHttpServer(): Server {
   return app.getHttpServer();
+}
+
+function signAdminAccessToken(adminUserId: string, chefAccount: RegisteredTestAccount): string {
+  return app.get(JwtService).sign({
+    email: "admin-chantier@smartsite.test",
+    organizationId: chefAccount.response.organization.id,
+    roles: ["administrateur"],
+    sub: adminUserId,
+  });
 }
 
 async function createRegisteredAccount(): Promise<RegisteredTestAccount> {
