@@ -9,6 +9,7 @@ import { DocumentsModule } from "./documents/documents.module.js";
 import { DroneRequestsModule } from "./drone-requests/drone-requests.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { OrganizationsModule } from "./organizations/organizations.module.js";
+import { PartnerRequestsModule } from "./partner-requests/partner-requests.module.js";
 import { PlanningModule } from "./planning/planning.module.js";
 import { getEnvironmentFilePaths } from "./shared/config/environment.js";
 import { SitesModule } from "./sites/sites.module.js";
@@ -28,6 +29,7 @@ import { SitesModule } from "./sites/sites.module.js";
     DroneRequestsModule,
     HealthModule,
     OrganizationsModule,
+    PartnerRequestsModule,
     PlanningModule,
     SitesModule,
   ],
