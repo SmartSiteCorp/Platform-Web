@@ -5,15 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
+    "predev": "npm run build -w @smartsite/shared",
     "start": "node dist/main.js",
     "build": "tsc -p tsconfig.build.json",
+    "prebuild": "npm run build -w @smartsite/shared",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretypecheck": "npm run build -w @smartsite/shared",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
+    "pretest": "npm run build -w @smartsite/shared",
     "test:watch": "vitest",
     "db:migrate": "tsx src/database/migrations/run-migrations.ts",
     "db:migration:create": "tsx scripts/create-migration.ts",
-    "openapi:export": "tsx src/openapi/export-openapi.ts"
+    "openapi:export": "tsx src/openapi/export-openapi.ts",
+    "preopenapi:export": "npm run build -w @smartsite/shared"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -22,12 +27,16 @@
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.0.0",
+    "@nestjs/throttler": "^6.5.0",
+    "@smartsite/shared": "0.1.0",
     "argon2": "^0.41.0",
     "class-transformer": "^0.5.0",
     "class-validator": "^0.14.0",
     "compression": "^1.7.0",
     "cookie-parser": "^1.4.0",
+    "dotenv": "^17.4.2",
     "helmet": "^8.0.0",
+    "nodemailer": "^9.0.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.0",
     "pg": "^8.0.0",
@@ -41,7 +50,9 @@
     "@types/compression": "^1.7.0",
     "@types/cookie-parser": "^1.4.0",
     "@types/express": "^5.0.0",
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.0.0",
+    "@types/nodemailer": "^8.0.1",
     "@types/passport-jwt": "^4.0.0",
     "@types/pg": "^8.0.0",
     "@types/supertest": "^6.0.0",
@@ -51,6 +62,6 @@
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^4.1.8"
   }
 }

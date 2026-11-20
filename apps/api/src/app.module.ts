@@ -1,17 +1,35 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 
+import { ArchitectRequestsModule } from "./architect-requests/architect-requests.module.js";
+import { AuthModule } from "./auth/auth.module.js";
+import { DashboardModule } from "./dashboard/dashboard.module.js";
 import { DatabaseModule } from "./database/database.module.js";
+import { DocumentsModule } from "./documents/documents.module.js";
+import { DroneRequestsModule } from "./drone-requests/drone-requests.module.js";
 import { HealthModule } from "./health/health.module.js";
+import { OrganizationsModule } from "./organizations/organizations.module.js";
+import { PlanningModule } from "./planning/planning.module.js";
+import { getEnvironmentFilePaths } from "./shared/config/environment.js";
+import { SitesModule } from "./sites/sites.module.js";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       cache: true,
+      envFilePath: getEnvironmentFilePaths(),
       isGlobal: true,
     }),
+    ArchitectRequestsModule,
+    AuthModule,
+    DashboardModule,
     DatabaseModule,
+    DocumentsModule,
+    DroneRequestsModule,
     HealthModule,
+    OrganizationsModule,
+    PlanningModule,
+    SitesModule,
   ],
 })
 export class AppModule {}

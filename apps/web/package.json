@@ -4,16 +4,21 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "next dev --port 3000 --hostname localhost",
+    "predev": "npm run build -w @smartsite/shared",
     "build": "next build",
+    "prebuild": "npm run build -w @smartsite/shared",
     "start": "next start --port 3000",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretypecheck": "npm run build -w @smartsite/shared",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
+    "pretest": "npm run build -w @smartsite/shared",
     "test:watch": "vitest",
-    "openapi:generate": "openapi-ts"
+    "openapi:generate": "openapi-ts && node scripts/mark-generated-typecheck-exempt.mjs"
   },
   "dependencies": {
+    "@smartsite/shared": "0.1.0",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-dialog": "^1.1.0",
     "@radix-ui/react-label": "^2.1.0",
@@ -53,10 +58,10 @@
     "eslint-config-next": "^16.2.6",
     "globals": "^15.0.0",
     "jsdom": "^26.0.0",
-    "postcss": "^8.4.31",
+    "postcss": "^8.5.15",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^4.1.8"
   }
 }
